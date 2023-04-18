@@ -1,0 +1,122 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+
+// Unreal Includes
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Components/SphereComponent.h"
+#include "Blueprint/UserWidget.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "DrawDebugHelpers.h"
+
+#include "Item/ItemData.h"
+
+#include "PlayerCharacter.generated.h"
+
+UCLASS()
+class FOODGAME_API APlayerCharacter : public ACharacter
+{
+	GENERATED_BODY()
+
+public:
+	// Sets default values for this character's properties
+	APlayerCharacter();
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+	// Axis
+	void MoveX(float AxisValue);
+	void MoveY(float AxisValue);
+	void CameraX(float AxisValue);
+	void CameraY(float AxisValue);
+
+	// Action
+	void Interact();
+
+	// Camera functions
+	void SwitchCamera();
+
+	// Arm functions
+	void LeftArmPressed();
+	void LeftArmReleased();
+	void LeftArmTimer();
+
+	void RightArmPressed();
+	void RightArmReleased();
+	void RightArmTimer();
+
+	UFUNCTION()
+		void OnLeftHandBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void OnLeftHandEndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+		void OnRightHandBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void OnRightHandEndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	void ToggleEnableArm(USphereComponent* ArmToToggle, bool bLeftHand);
+
+public:	
+	// References
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		APlayerController* PC;
+
+	// Components
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+		UCameraComponent* FirstPersonCamera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+		UCameraComponent* ThirdPersonCamera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+		USpringArmComponent* PlayerCameraSpringArm;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+		USphereComponent* LeftHandCollision;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+		USphereComponent* RightHandCollision;
+
+	// Hand Pointers
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
+		class AParentItem* LeftHandItem = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
+		class AParentItem* RightHandItem = nullptr;
+
+protected:
+	// Camera
+	bool bInThirdPerson;
+
+	// Arms
+	float ArmPressTime = 0.5f;
+	float ArmRadius = 20.0f;
+	float ArmLength = 120.0f;
+
+	// Left Arm
+	TEnumAsByte<EArmState> LeftArmState = EArmState::Disabled;
+	bool bLeftArmPressed = false;
+	FTimerHandle LeftArmHandle;
+
+	// Right Arm
+	TEnumAsByte<EArmState> RightArmState = EArmState::Disabled;
+	bool bRightArmPressed = false;
+	FTimerHandle RightArmHandle;
+};
