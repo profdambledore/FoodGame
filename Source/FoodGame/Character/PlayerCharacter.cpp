@@ -28,16 +28,14 @@ APlayerCharacter::APlayerCharacter()
 	ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Third Person Camera"));
 	ThirdPersonCamera->SetupAttachment(PlayerCameraSpringArm, USpringArmComponent::SocketName);
 
-	LeftHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Left Hand Collision"));
-	LeftHandCollision->SetSphereRadius(ArmRadius);
-	LeftHandCollision->SetupAttachment(FirstPersonCamera, "");
-	LeftHandCollision->SetRelativeLocation(FVector(ArmLength, -40.0f, -20.0f));
+	InteractablesRange = CreateDefaultSubobject<USphereComponent>(TEXT("Interactables Collision"));
+	InteractablesRange->SetSphereRadius(InteractRange * 2);
+	InteractablesRange->SetupAttachment(GetMesh(), "");
 
-	RightHandCollision = CreateDefaultSubobject<USphereComponent>(TEXT("Right Hand Collision"));
-	RightHandCollision->SetSphereRadius(ArmRadius);
-	RightHandCollision->SetupAttachment(FirstPersonCamera, "");
-	RightHandCollision->SetRelativeLocation(FVector(ArmLength, 40.0f, -20.0f));
-
+	LeftHand = CreateDefaultSubobject<USceneComponent>(TEXT("Left Hand"));
+	LeftHand->SetRelativeLocation(FVector(InteractRange, -40.0f, 20.0f));
+	RightHand = CreateDefaultSubobject<USceneComponent>(TEXT("Right Hand"));
+	RightHand->SetRelativeLocation(FVector(InteractRange, 40.0f, 20.0f));
 
 	// Set the active camera
 	ThirdPersonCamera->SetActive(false, false);
@@ -49,20 +47,40 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	LeftHandCollision->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnLeftHandBeginOverlap);
-	LeftHandCollision->OnComponentEndOverlap.AddDynamic(this, &APlayerCharacter::OnLeftHandEndOverlap);
-	LeftHandCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	RightHandCollision->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnRightHandBeginOverlap);
-	RightHandCollision->OnComponentEndOverlap.AddDynamic(this, &APlayerCharacter::OnRightHandEndOverlap);
-	RightHandCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
+	InteractablesRange->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnIRBeginOverlap);
+	InteractablesRange->OnComponentEndOverlap.AddDynamic(this, &APlayerCharacter::OnIREndOverlap);
 }
 
 // Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (InteractablesInRange.Num() != 0) {
+		// Trace interactables infront of the player
+		// Generate information for the trace
+		FHitResult TraceHit = FHitResult(ForceInit);
+		FVector TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
+		FVector TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
+		ECollisionChannel TraceChannel = ECC_GameTraceChannel1;
+
+		FCollisionQueryParams TraceParams(FName(TEXT("Interact Trace")), true, NULL);
+		TraceParams.bTraceComplex = true;
+		TraceParams.bReturnPhysicalMaterial = true;
+
+		bool bInteractTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
+		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
+		if (bInteractTrace) {
+			if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
+				// Set ItemContextWidget to HitLocation, enable player tracking
+				// Also set InteractableLookingAt to OtherActor
+				InteractableLookingAt = TraceHit.Actor.Get();
+			}
+			else {
+				InteractableLookingAt = nullptr;
+			}
+		}
+	}
 
 }
 
@@ -138,51 +156,45 @@ void APlayerCharacter::SwitchCamera()
 }
 
 // --- Interact ---
+void APlayerCharacter::OnIRBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	// Check if the other actor is a class of AParentItem
+	// This will need changing if other child classes are introduced later
+	if (OtherActor->IsA(AParentItem::StaticClass())) {
+		InteractablesInRange.Add(OtherActor);
+	}
+}
+
+void APlayerCharacter::OnIREndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	// Find the actor in the array and remover it
+	if (OtherActor->IsA(AParentItem::StaticClass())) {
+		InteractablesInRange.Remove(OtherActor);
+		if (InteractablesInRange.Num() == 0) { InteractableLookingAt = nullptr; }
+	}
+}
+
 void APlayerCharacter::Interact()
 {
-	// Trace items infront of the player
-	// Generate information for the trace
-	FHitResult TraceHit = FHitResult(ForceInit);
-	FVector TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 100);
-	FVector TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * 150));
-	ECollisionChannel TraceChannel = ECC_GameTraceChannel1;
-
-	FCollisionQueryParams TraceParams(FName(TEXT("Interact Trace")), true, NULL);
-	TraceParams.bTraceComplex = true;
-	TraceParams.bReturnPhysicalMaterial = true;
-
-	bool bInteractTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
-	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
-	if (bInteractTrace) {
-		// Check to see if the collided pickup is a inventory pickup
-		//if (TraceHit.Actor->GetClass() == AInventoryPickup::StaticClass()) {
-		//	AInventoryPickup* pickupToCollect = Cast<AInventoryPickup>(TraceHit.Actor);
-		//	if (pickupToCollect) { AddInventory(pickupToCollect->GetComponentClass()); pickupToCollect->CollectPickup(); }
-		//}
-		// Then check to see if it is a Item Pickup
-		//else if (TraceHit.Actor->GetClass() == AItemPickup::StaticClass()) {
-		//	AItemPickup* pickupToCollect = Cast<AItemPickup>(TraceHit.Actor);
-		//	if (pickupToCollect && InventoryComponent) { InventoryComponent->AddItemToInventory(pickupToCollect->GetItemData());  pickupToCollect->CollectPickup(); };
-		//}
-	}
+	
 }
 
 // --- Arms
 void APlayerCharacter::LeftArmPressed()
 {
 	bLeftArmPressed = true;
-
-	if (LeftArmState != EArmState::Pressed) {
-		// Could use lambda here, but this will be used more than once
-		ToggleEnableArm(LeftHandCollision, true);
-
-		GetWorld()->GetTimerManager().ClearTimer(LeftArmHandle);
-		GetWorld()->GetTimerManager().SetTimer(LeftArmHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::LeftArmTimer), ArmPressTime, false, ArmPressTime);
-	}
-	else {
+	if (LeftArmState == EArmState::Pressed) {
 		// Disable and set arm state to Disabled
 		LeftArmState = EArmState::Disabled;
-		ToggleEnableArm(LeftHandCollision, true);
+		DisableArm(true);
+	}
+	else if (InteractableLookingAt != nullptr) {
+		if (LeftArmState != EArmState::Pressed) {
+			GetWorld()->GetTimerManager().ClearTimer(LeftArmHandle);
+			GetWorld()->GetTimerManager().SetTimer(LeftArmHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::LeftArmTimer), ArmPressTime, false, ArmPressTime);
+
+			EnableArm(true);
+		}
 	}
 }
 
@@ -192,7 +204,7 @@ void APlayerCharacter::LeftArmReleased()
 	if (LeftArmState == EArmState::Held) {
 		// Disable and set arm state to Disabled
 		LeftArmState = EArmState::Disabled;
-		ToggleEnableArm(LeftHandCollision, true);
+		DisableArm(true);
 	}
 }
 
@@ -205,54 +217,26 @@ void APlayerCharacter::LeftArmTimer()
 	}
 	else {
 		// We have pressed, set state to Pressed
-		UE_LOG(LogTemp, Warning, TEXT("Pressed"));
+		UE_LOG(LogTemp, Warning, TEXT("LMB Pressed"));
 		LeftArmState = EArmState::Pressed;
 	}
-}
-
-void APlayerCharacter::OnLeftHandBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	// First, check if we have something in the left hand
-	if (!LeftHandItem) {
-		// Then check if the collided actor is a item
-		if (OtherActor->IsA(AParentItem::StaticClass())) {
-			UE_LOG(LogTemp, Warning, TEXT("Class Check"));
-			AParentItem* newItem = Cast<AParentItem>(OtherActor);
-			// If it is a two handed item, check if the right hand is filled
-			if (newItem->GetTwoHandedItem()) {
-		
-			}
-			// Else, attach it to the hand and store pointer
-			else {
-				LeftHandItem = newItem;
-				newItem->AttachToComponent(LeftHandCollision, FAttachmentTransformRules::SnapToTargetIncludingScale);
-				newItem->ToggleItemCollision(false);
-			}
-		}
-	}
-
-}
-
-void APlayerCharacter::OnLeftHandEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	// May be needed later
 }
 
 void APlayerCharacter::RightArmPressed()
 {
 	bRightArmPressed = true;
-
-	if (RightArmState != EArmState::Pressed) {
-		// Could use lambda here, but this will be used more than once
-		ToggleEnableArm(RightHandCollision, false);
-
-		GetWorld()->GetTimerManager().ClearTimer(RightArmHandle);
-		GetWorld()->GetTimerManager().SetTimer(RightArmHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::RightArmTimer), ArmPressTime, false, ArmPressTime);
-	}
-	else {
+	if (RightArmState == EArmState::Pressed) {
 		// Disable and set arm state to Disabled
 		RightArmState = EArmState::Disabled;
-		ToggleEnableArm(RightHandCollision, false);
+		DisableArm(false);
+	}
+	else if (InteractableLookingAt != nullptr) {
+		if (RightArmState != EArmState::Pressed) {
+		GetWorld()->GetTimerManager().ClearTimer(RightArmHandle);
+		GetWorld()->GetTimerManager().SetTimer(RightArmHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::RightArmTimer), ArmPressTime, false, ArmPressTime);
+
+		EnableArm(false);
+		}
 	}
 }
 
@@ -262,7 +246,7 @@ void APlayerCharacter::RightArmReleased()
 	if (RightArmState == EArmState::Held) {
 		// Disable and set arm state to Disabled
 		RightArmState = EArmState::Disabled;
-		ToggleEnableArm(RightHandCollision, false);
+		DisableArm(false);
 	}
 }
 
@@ -280,73 +264,54 @@ void APlayerCharacter::RightArmTimer()
 	}
 }
 
-void APlayerCharacter::OnRightHandBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void APlayerCharacter::EnableArm(bool bIsLeft)
 {
-	// First, check if we have something in the right hand
-	if (!RightHandItem) {
-		// Then check if the collided actor is a item
-		if (OtherActor->IsA(AParentItem::StaticClass())) {
-			UE_LOG(LogTemp, Warning, TEXT("Class Check"));
-			AParentItem* newItem = Cast<AParentItem>(OtherActor);
-			// If it is a two handed item, check if the right hand is filled
-			if (newItem->GetTwoHandedItem()) {
+	// Check if there is an interactable being looked at
+	if (InteractableLookingAt) {
+		// Check is the interactable is an item
+		if (InteractableLookingAt->IsA(AParentItem::StaticClass())) {
+			// If it is, cast to AParentItem
+			AParentItem* laItem = Cast<AParentItem>(InteractableLookingAt);
+			// Then check if it is a two handed item.  Check if the right hand is filled
+			if (laItem->GetTwoHandedItem()) {
 
 			}
-			// Else, attach it to the hand and store pointer
+			// Else, check which hand to attach it to and store pointer
+			else if (bIsLeft) {
+				LeftHandItem = laItem;
+				laItem->ToggleItemCollision(false);
+				laItem->AttachToComponent(LeftHand, FAttachmentTransformRules::SnapToTargetIncludingScale);
+				
+			}
 			else {
-				RightHandItem = newItem;
-				newItem->AttachToComponent(RightHandCollision, FAttachmentTransformRules::SnapToTargetIncludingScale);
-				newItem->ToggleItemCollision(false);
+				RightHandItem = laItem;
+				laItem->ToggleItemCollision(false);
+				laItem->AttachToComponent(RightHand, FAttachmentTransformRules::SnapToTargetIncludingScale);
 			}
 		}
 	}
+	
 
 }
 
-void APlayerCharacter::OnRightHandEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void APlayerCharacter::DisableArm(bool bIsLeft)
 {
-	// May be needed later
-}
-
-void APlayerCharacter::ToggleEnableArm(USphereComponent* ArmToToggle, bool bLeftHand)
-{
-	if (ArmToToggle->GetCollisionEnabled() == ECollisionEnabled::NoCollision) {
-		// Enable the arm
-		ArmToToggle->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		ArmToToggle->SetHiddenInGame(false);
+	if (bIsLeft) {
+		if (LeftHandItem) {
+			LeftHandItem->ToggleItemCollision(true);
+			LeftHandItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			LeftHandItem->SetActorLocation(FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 250));
+			LeftHandItem = nullptr;
+		}
 	}
 	else {
-		// Disable
-		ArmToToggle->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		ArmToToggle->SetHiddenInGame(true);
-		// Check if the item is two handed
-		if (LeftHandItem != nullptr) {
-			if (LeftHandItem->GetTwoHandedItem()) {
-				// If it is, drop it from both hands
-				// Drop Item
-				//LeftHandItem = nullptr;
-				//RightHandItem = nullptr;
-			}
-			else if (bLeftHand) {
-				// Drop Left Hand Item
-				UE_LOG(LogTemp, Warning, TEXT("Deattaching"));
-				if (LeftHandItem) {
-					LeftHandItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-					LeftHandItem->ToggleItemCollision(true);
-					LeftHandItem = nullptr;
-				}
-			}
+		if (RightHandItem) {
+			RightHandItem->ToggleItemCollision(true);
+			RightHandItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			RightHandItem->SetActorLocation(FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 250));
+			RightHandItem = nullptr;
 		}
-		else {
-			// Drop Right Hand Item
-			UE_LOG(LogTemp, Warning, TEXT("Deattaching"));
-			if (RightHandItem) {
-				RightHandItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-				RightHandItem->ToggleItemCollision(true);
-				RightHandItem = nullptr;
-			}
-		}
-	
 	}
+	
 }
 

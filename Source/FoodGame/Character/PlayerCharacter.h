@@ -59,19 +59,14 @@ protected:
 	void RightArmReleased();
 	void RightArmTimer();
 
-	UFUNCTION()
-		void OnLeftHandBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	void EnableArm(bool bIsLeft);
+	void DisableArm(bool bIsLeft);
 
 	UFUNCTION()
-		void OnLeftHandEndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+		void OnIRBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-		void OnRightHandBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-		void OnRightHandEndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	void ToggleEnableArm(USphereComponent* ArmToToggle, bool bLeftHand);
+		void OnIREndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 public:	
 	// References
@@ -89,10 +84,13 @@ public:
 		USpringArmComponent* PlayerCameraSpringArm;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
-		USphereComponent* LeftHandCollision;
+		USphereComponent* InteractablesRange;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
-		USphereComponent* RightHandCollision;
+		USceneComponent* LeftHand;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+		USceneComponent* RightHand;
 
 	// Hand Pointers
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
@@ -102,13 +100,16 @@ public:
 		class AParentItem* RightHandItem = nullptr;
 
 protected:
+	// Interact
+	float InteractRange = 120.0f;
+	TArray<AActor*> InteractablesInRange;
+	AActor* InteractableLookingAt = nullptr;
+
 	// Camera
 	bool bInThirdPerson;
 
 	// Arms
 	float ArmPressTime = 0.5f;
-	float ArmRadius = 20.0f;
-	float ArmLength = 120.0f;
 
 	// Left Arm
 	TEnumAsByte<EArmState> LeftArmState = EArmState::Disabled;

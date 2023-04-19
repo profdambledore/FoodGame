@@ -45,11 +45,14 @@ void AParentItem::ToggleItemCollision(bool bSetCollisionOn)
 {
 	if (bSetCollisionOn) {
 		// Enable collision
+		ItemMesh->SetSimulatePhysics(true);
 		ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	}
 	else {
 		// Disable
+		ItemMesh->SetSimulatePhysics(false);
 		ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	};
 }
 
