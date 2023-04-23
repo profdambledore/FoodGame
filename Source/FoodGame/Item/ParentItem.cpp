@@ -41,6 +41,11 @@ bool AParentItem::GetTwoHandedItem()
 	return Data.bRequiresTwoHands;
 }
 
+FString AParentItem::GetItemName()
+{
+	return Data.Name;
+}
+
 void AParentItem::ToggleItemCollision(bool bSetCollisionOn)
 {
 	if (bSetCollisionOn) {

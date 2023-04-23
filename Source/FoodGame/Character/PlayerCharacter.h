@@ -9,6 +9,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "DrawDebugHelpers.h"
@@ -31,8 +32,6 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-
 
 protected:
 	// Called when the game starts or when spawned
@@ -68,10 +67,16 @@ protected:
 	UFUNCTION()
 		void OnIREndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	// Inspect
+	void UpdateInspectWidget(bool bEnable, FVector Location);
+
 public:	
 	// References
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		APlayerController* PC;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		class UInspectWidget* IW = nullptr;
 
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
@@ -92,6 +97,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
 		USceneComponent* RightHand;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+		UWidgetComponent* InspectWidgetComponent;
+
 	// Hand Pointers
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
 		class AParentItem* LeftHandItem = nullptr;
@@ -104,6 +112,14 @@ protected:
 	float InteractRange = 120.0f;
 	TArray<AActor*> InteractablesInRange;
 	AActor* InteractableLookingAt = nullptr;
+	bool bInteractWidgetPlaced = false;
+
+	// Trace Data
+	FHitResult TraceHit = FHitResult(ForceInit);
+	FVector TraceStart;
+	FVector TraceEnd;
+	ECollisionChannel TraceChannel = ECC_GameTraceChannel1;
+	bool bInteractTrace;
 
 	// Camera
 	bool bInThirdPerson;

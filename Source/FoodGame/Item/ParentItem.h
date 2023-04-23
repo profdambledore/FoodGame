@@ -30,6 +30,9 @@ public:
 		bool GetTwoHandedItem();
 
 	UFUNCTION(BlueprintCallable)
+		FString GetItemName();
+
+	UFUNCTION(BlueprintCallable)
 		void ToggleItemCollision(bool bSetCollisionOn);
 
 protected:
@@ -44,5 +47,8 @@ public:
 	// Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FItem Data;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FItemUsage> UsagePoints;
 
 };

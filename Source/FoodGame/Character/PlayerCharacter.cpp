@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Item/ParentItem.h"
+#include "Character/InspectWidget.h"
 #include "Character/PlayerCharacter.h"
 
 // Sets default values
@@ -9,14 +10,15 @@ APlayerCharacter::APlayerCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Find Player Mesh
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh>PlayerMeshObject(TEXT("/Game/Assets/Mannequin/Character/Mesh/SK_Mannequin"));
-	if (PlayerMeshObject.Succeeded()) { GetMesh()->SetSkeletalMesh(PlayerMeshObject.Object); }
-
 	// Component Set Up
+	// Mesh
+	//static ConstructorHelpers::FObjectFinder<USkeletalMesh>PlayerMeshObject(TEXT("/Game/Assets/Mannequin/Character/Mesh/SK_Mannequin"));
+	//if (PlayerMeshObject.Succeeded()) { GetMesh()->SetSkeletalMesh(PlayerMeshObject.Object); }
+
 	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
 	GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 
+	// Cameras
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Camera"));
 	FirstPersonCamera->SetRelativeLocation(FVector(10.0f, 0.0f, 90.0f));
 
@@ -28,6 +30,7 @@ APlayerCharacter::APlayerCharacter()
 	ThirdPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Third Person Camera"));
 	ThirdPersonCamera->SetupAttachment(PlayerCameraSpringArm, USpringArmComponent::SocketName);
 
+	// Interaction
 	InteractablesRange = CreateDefaultSubobject<USphereComponent>(TEXT("Interactables Collision"));
 	InteractablesRange->SetSphereRadius(InteractRange * 2);
 	InteractablesRange->SetupAttachment(GetMesh(), "");
@@ -36,6 +39,11 @@ APlayerCharacter::APlayerCharacter()
 	LeftHand->SetRelativeLocation(FVector(InteractRange, -40.0f, 20.0f));
 	RightHand = CreateDefaultSubobject<USceneComponent>(TEXT("Right Hand"));
 	RightHand->SetRelativeLocation(FVector(InteractRange, 40.0f, 20.0f));
+
+	// Inspect
+	InspectWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Inspect Widget"));
+	static ConstructorHelpers::FClassFinder<UUserWidget>InspectWidgetClass(TEXT("/Game/Player/WBP_InspectWidget"));
+	if (InspectWidgetClass.Succeeded()) { InspectWidgetComponent->SetWidgetClass(InspectWidgetClass.Class); };
 
 	// Set the active camera
 	ThirdPersonCamera->SetActive(false, false);
@@ -47,8 +55,13 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Add Overlap Events
 	InteractablesRange->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnIRBeginOverlap);
 	InteractablesRange->OnComponentEndOverlap.AddDynamic(this, &APlayerCharacter::OnIREndOverlap);
+
+	// Get the pointer to the InspectWidgetComponent class
+	IW = Cast<UInspectWidget>(InspectWidgetComponent->GetUserWidgetObject());
+	
 }
 
 // Called every frame
@@ -59,29 +72,37 @@ void APlayerCharacter::Tick(float DeltaTime)
 	if (InteractablesInRange.Num() != 0) {
 		// Trace interactables infront of the player
 		// Generate information for the trace
-		FHitResult TraceHit = FHitResult(ForceInit);
-		FVector TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
-		FVector TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
-		ECollisionChannel TraceChannel = ECC_GameTraceChannel1;
+		TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
+		TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
 
 		FCollisionQueryParams TraceParams(FName(TEXT("Interact Trace")), true, NULL);
 		TraceParams.bTraceComplex = true;
 		TraceParams.bReturnPhysicalMaterial = true;
 
-		bool bInteractTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
+		bInteractTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
 		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
 		if (bInteractTrace) {
 			if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
-				// Set ItemContextWidget to HitLocation, enable player tracking
 				// Also set InteractableLookingAt to OtherActor
 				InteractableLookingAt = TraceHit.Actor.Get();
+				if (!bInteractWidgetPlaced) {
+					//InteractWidget->SetComponentLocation(TraceHit.Location)
+					if (IW) { 
+						UpdateInspectWidget(true, TraceHit.Location);
+						// UPDATE: When Interface implemented, change to casting to interface and call GetName (or function name that returns item name)
+						AParentItem* itemHit = Cast<AParentItem>(InteractableLookingAt);
+						IW->SetInspectingItem(itemHit->GetItemName(), itemHit->UsagePoints, false);
+					}
+					bInteractWidgetPlaced = true;
+				}
 			}
 			else {
+				UpdateInspectWidget(false, FVector(0.0f, 0.0f, 0.0f));
 				InteractableLookingAt = nullptr;
+				bInteractWidgetPlaced = false;
 			}
 		}
 	}
-
 }
 
 // Called to bind functionality to input
@@ -174,12 +195,27 @@ void APlayerCharacter::OnIREndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 	}
 }
 
+void APlayerCharacter::UpdateInspectWidget(bool bEnable, FVector Location)
+{
+	if (bEnable) {
+		// Show the widget, set it to active and move it
+		InspectWidgetComponent->SetActive(true);
+		InspectWidgetComponent->SetVisibility(true, true);
+		InspectWidgetComponent->SetWorldLocation(Location);
+	}
+	else {
+		// Disable and hide the widget
+		InspectWidgetComponent->SetActive(false);
+		InspectWidgetComponent->SetVisibility(false, false);
+	}
+}
+
 void APlayerCharacter::Interact()
 {
 	
 }
 
-// --- Arms
+// --- Arms --- 
 void APlayerCharacter::LeftArmPressed()
 {
 	bLeftArmPressed = true;

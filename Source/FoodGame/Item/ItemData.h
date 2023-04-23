@@ -26,6 +26,31 @@ enum EArmState
 	Held UMETA(Display Name = "Held"),
 };
 
+UENUM()
+enum EUsageRule
+{
+	Pickup UMETA(Display Name = "Pickup"),
+	Chop UMETA(Display Name = "Chop"),
+};
+
+USTRUCT(BlueprintType)
+struct FItemUsage
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	// The input name (MoveX, CameraY, Interact)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		FString Input;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TEnumAsByte<EUsageRule> Rule;
+
+	// The name of the action (Chop, Pick up)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		FString Action;
+};
+
 USTRUCT(BlueprintType)
 struct FItem : public FTableRowBase
 {
@@ -43,4 +68,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		bool bRequiresTwoHands;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TArray<FItemUsage> UsageRules;
 };
+
