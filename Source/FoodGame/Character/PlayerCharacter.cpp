@@ -32,18 +32,14 @@ APlayerCharacter::APlayerCharacter()
 
 	// Interaction
 	InteractablesRange = CreateDefaultSubobject<USphereComponent>(TEXT("Interactables Collision"));
-	InteractablesRange->SetSphereRadius(InteractRange * 2);
+	InteractablesRange->SetSphereRadius(InteractRange);
 	InteractablesRange->SetupAttachment(GetMesh(), "");
 
-	LeftHand = CreateDefaultSubobject<USceneComponent>(TEXT("Left Hand"));
-	LeftHand->SetRelativeLocation(FVector(InteractRange, -40.0f, 20.0f));
-	RightHand = CreateDefaultSubobject<USceneComponent>(TEXT("Right Hand"));
-	RightHand->SetRelativeLocation(FVector(InteractRange, 40.0f, 20.0f));
+	ItemPosition = CreateDefaultSubobject<USceneComponent>(TEXT("Left Hand"));
+	ItemPosition->SetRelativeLocation(FVector(InteractRange, -40.0f, 20.0f));
 
-	// Inspect
-	InspectWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("Inspect Widget"));
-	static ConstructorHelpers::FClassFinder<UUserWidget>InspectWidgetClass(TEXT("/Game/Player/WBP_InspectWidget"));
-	if (InspectWidgetClass.Succeeded()) { InspectWidgetComponent->SetWidgetClass(InspectWidgetClass.Class); };
+	PlacingMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Placing Mesh"));
+	PlacingMesh->SetVisibility(false, false);
 
 	// Set the active camera
 	ThirdPersonCamera->SetActive(false, false);
@@ -58,10 +54,6 @@ void APlayerCharacter::BeginPlay()
 	// Add Overlap Events
 	InteractablesRange->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnIRBeginOverlap);
 	InteractablesRange->OnComponentEndOverlap.AddDynamic(this, &APlayerCharacter::OnIREndOverlap);
-
-	// Get the pointer to the InspectWidgetComponent class
-	IW = Cast<UInspectWidget>(InspectWidgetComponent->GetUserWidgetObject());
-	
 }
 
 // Called every frame
@@ -69,38 +61,47 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (InteractablesInRange.Num() != 0) {
+	if (InteractablesInRange.Num() != 0 && !bDropMode) {
 		// Trace interactables infront of the player
 		// Generate information for the trace
 		TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
 		TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
+		TraceChannel = ECC_GameTraceChannel1;
 
 		FCollisionQueryParams TraceParams(FName(TEXT("Interact Trace")), true, NULL);
 		TraceParams.bTraceComplex = true;
 		TraceParams.bReturnPhysicalMaterial = true;
 
-		bInteractTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
+		bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
 		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
-		if (bInteractTrace) {
+		if (bTrace) {
 			if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
 				// Also set InteractableLookingAt to OtherActor
 				InteractableLookingAt = TraceHit.Actor.Get();
-				if (!bInteractWidgetPlaced) {
-					//InteractWidget->SetComponentLocation(TraceHit.Location)
-					if (IW) { 
-						UpdateInspectWidget(true, TraceHit.Location);
-						// UPDATE: When Interface implemented, change to casting to interface and call GetName (or function name that returns item name)
-						AParentItem* itemHit = Cast<AParentItem>(InteractableLookingAt);
-						IW->SetInspectingItem(itemHit->GetItemName(), itemHit->UsagePoints, false);
-					}
-					bInteractWidgetPlaced = true;
-				}
 			}
 			else {
-				UpdateInspectWidget(false, FVector(0.0f, 0.0f, 0.0f));
 				InteractableLookingAt = nullptr;
-				bInteractWidgetPlaced = false;
 			}
+		}
+	}
+	else if (PlacingMesh->IsVisible()) {
+		// Trace to see where to place the hologram
+		TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
+		TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
+		TraceChannel = ECC_GameTraceChannel1;
+		FVector dropLoc;
+
+		FCollisionQueryParams TraceParams(FName(TEXT("Drop Trace")), true, NULL);
+		TraceParams.bTraceComplex = true;
+		TraceParams.bReturnPhysicalMaterial = true;
+
+		bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
+		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
+		if (bTrace) {
+			PlacingMesh->SetWorldLocation(TraceHit.Location);
+		}
+		else {
+			PlacingMesh->SetWorldLocation(TraceEnd);
 		}
 	}
 }
@@ -119,10 +120,6 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	// Add Action Binds
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &APlayerCharacter::Interact);
 	PlayerInputComponent->BindAction("Camera", IE_Pressed, this, &APlayerCharacter::SwitchCamera);
-	PlayerInputComponent->BindAction("LeftArm", IE_Pressed, this, &APlayerCharacter::LeftArmPressed);
-	PlayerInputComponent->BindAction("LeftArm", IE_Released, this, &APlayerCharacter::LeftArmReleased);
-	PlayerInputComponent->BindAction("RightArm", IE_Pressed, this, &APlayerCharacter::RightArmPressed);
-	PlayerInputComponent->BindAction("RightArm", IE_Released, this, &APlayerCharacter::RightArmReleased);
 }
 
 // --- Movement ---
@@ -195,159 +192,121 @@ void APlayerCharacter::OnIREndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 	}
 }
 
-void APlayerCharacter::UpdateInspectWidget(bool bEnable, FVector Location)
-{
-	if (bEnable) {
-		// Show the widget, set it to active and move it
-		InspectWidgetComponent->SetActive(true);
-		InspectWidgetComponent->SetVisibility(true, true);
-		InspectWidgetComponent->SetWorldLocation(Location);
-	}
-	else {
-		// Disable and hide the widget
-		InspectWidgetComponent->SetActive(false);
-		InspectWidgetComponent->SetVisibility(false, false);
-	}
-}
-
 void APlayerCharacter::Interact()
 {
 	
 }
 
-// --- Arms --- 
-void APlayerCharacter::LeftArmPressed()
+void APlayerCharacter::ToggleDropMode()
 {
-	bLeftArmPressed = true;
-	if (LeftArmState == EArmState::Pressed) {
-		// Disable and set arm state to Disabled
-		LeftArmState = EArmState::Disabled;
-		DisableArm(true);
-	}
-	else if (InteractableLookingAt != nullptr) {
-		if (LeftArmState != EArmState::Pressed) {
-			GetWorld()->GetTimerManager().ClearTimer(LeftArmHandle);
-			GetWorld()->GetTimerManager().SetTimer(LeftArmHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::LeftArmTimer), ArmPressTime, false, ArmPressTime);
+	bDropMode = !bDropMode;
+}
 
-			EnableArm(true);
+// --- Actions ---
+void APlayerCharacter::PrimaryActionPress()
+{
+	if (bDropMode) {
+		bPrimaryActionPressed = true;
+		if (PrimaryActionState == EActionState::Pressed) {
+			// Disable and set arm state to Disabled
+			PrimaryActionState = EActionState::Disabled;
+		}
+		else if (InteractableLookingAt != nullptr) {
+			if (PrimaryActionState != EActionState::Pressed) {
+				GetWorld()->GetTimerManager().ClearTimer(PrimaryActionHandle);
+				GetWorld()->GetTimerManager().SetTimer(PrimaryActionHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::PrimaryActionTimer), ActionPressTime, false, ActionPressTime);
+			}
+		}
+	}
+	else {
+		// Check if there is an interactable being looked at
+		if (InteractableLookingAt) {
+			// Check if the interactable is an item
+			if (InteractableLookingAt->IsA(AParentItem::StaticClass())) {
+				// Cast to AParentItem and check the weight
+				AParentItem* newItem = Cast<AParentItem>(InteractableLookingAt);
+				if (CheckCanCollectItem(newItem->GetItemWeight())) {
+					CollectItem(newItem);
+				}
+			}
 		}
 	}
 }
 
-void APlayerCharacter::LeftArmReleased()
+void APlayerCharacter::PrimaryActionRelease()
 {
-	bLeftArmPressed = false;
-	if (LeftArmState == EArmState::Held) {
-		// Disable and set arm state to Disabled
-		LeftArmState = EArmState::Disabled;
-		DisableArm(true);
+	bPrimaryActionPressed = false;
+	if (PrimaryActionState == EActionState::Held) {
+		PrimaryActionState = EActionState::Disabled;
+
+		DropItem(0);
+
+		// If hologram, end hologram
+		if (PlacingMesh->IsVisible()) {
+			PlacingMesh->SetVisibility(false, false);
+		}
 	}
 }
 
-void APlayerCharacter::LeftArmTimer()
+void APlayerCharacter::PrimaryActionTimer()
 {
-	if (bLeftArmPressed) {
+	if (bPrimaryActionPressed) {
 		// We are holding, set state to Held
-		UE_LOG(LogTemp, Warning, TEXT("Held"));
-		LeftArmState = EArmState::Held;
+		PrimaryActionState = EActionState::Held;
+
+		// Begin hologram
+		PlacingMesh->SetVisibility(true, false);
+		PlacingMesh->SetStaticMesh(HeldItems[0]->ItemMesh->GetStaticMesh());
+
 	}
 	else {
 		// We have pressed, set state to Pressed
-		UE_LOG(LogTemp, Warning, TEXT("LMB Pressed"));
-		LeftArmState = EArmState::Pressed;
+		PrimaryActionState = EActionState::Pressed;
 	}
 }
 
-void APlayerCharacter::RightArmPressed()
+// --- Items --- 
+bool APlayerCharacter::CheckCanCollectItem(float NewItemWeight)
 {
-	bRightArmPressed = true;
-	if (RightArmState == EArmState::Pressed) {
-		// Disable and set arm state to Disabled
-		RightArmState = EArmState::Disabled;
-		DisableArm(false);
-	}
-	else if (InteractableLookingAt != nullptr) {
-		if (RightArmState != EArmState::Pressed) {
-		GetWorld()->GetTimerManager().ClearTimer(RightArmHandle);
-		GetWorld()->GetTimerManager().SetTimer(RightArmHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::RightArmTimer), ArmPressTime, false, ArmPressTime);
-
-		EnableArm(false);
-		}
-	}
-}
-
-void APlayerCharacter::RightArmReleased()
-{
-	bRightArmPressed = false;
-	if (RightArmState == EArmState::Held) {
-		// Disable and set arm state to Disabled
-		RightArmState = EArmState::Disabled;
-		DisableArm(false);
-	}
-}
-
-void APlayerCharacter::RightArmTimer()
-{
-	if (bRightArmPressed) {
-		// We are holding, set state to Held
-		UE_LOG(LogTemp, Warning, TEXT("Held"));
-		RightArmState = EArmState::Held;
+	if (CurrentWeight + NewItemWeight > MaxWeight) {
+		return false;
 	}
 	else {
-		// We have pressed, set state to Pressed
-		UE_LOG(LogTemp, Warning, TEXT("Pressed"));
-		RightArmState = EArmState::Pressed;
+		return true;
 	}
 }
 
-void APlayerCharacter::EnableArm(bool bIsLeft)
+void APlayerCharacter::CollectItem(AParentItem* NewItem)
 {
-	// Check if there is an interactable being looked at
-	if (InteractableLookingAt) {
-		// Check is the interactable is an item
-		if (InteractableLookingAt->IsA(AParentItem::StaticClass())) {
-			// If it is, cast to AParentItem
-			AParentItem* laItem = Cast<AParentItem>(InteractableLookingAt);
-			// Then check if it is a two handed item.  Check if the right hand is filled
-			if (laItem->GetTwoHandedItem()) {
-
-			}
-			// Else, check which hand to attach it to and store pointer
-			else if (bIsLeft) {
-				LeftHandItem = laItem;
-				laItem->ToggleItemCollision(false);
-				laItem->AttachToComponent(LeftHand, FAttachmentTransformRules::SnapToTargetIncludingScale);
-				
-			}
-			else {
-				RightHandItem = laItem;
-				laItem->ToggleItemCollision(false);
-				laItem->AttachToComponent(RightHand, FAttachmentTransformRules::SnapToTargetIncludingScale);
-			}
-		}
-	}
-	
-
+	// Add the new item to the array
+	HeldItems.Add(NewItem);
 }
 
-void APlayerCharacter::DisableArm(bool bIsLeft)
+void APlayerCharacter::DropItem(int DropItemIndex)
 {
-	if (bIsLeft) {
-		if (LeftHandItem) {
-			LeftHandItem->ToggleItemCollision(true);
-			LeftHandItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			LeftHandItem->SetActorLocation(FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 250));
-			LeftHandItem = nullptr;
-		}
+	TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
+	TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
+	TraceChannel = ECC_GameTraceChannel1;
+	FVector dropLoc;
+
+	FCollisionQueryParams TraceParams(FName(TEXT("Drop Trace")), true, NULL);
+	TraceParams.bTraceComplex = true;
+	TraceParams.bReturnPhysicalMaterial = true;
+
+	bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
+	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
+	if (bTrace) {
+		dropLoc = TraceHit.Location;
 	}
 	else {
-		if (RightHandItem) {
-			RightHandItem->ToggleItemCollision(true);
-			RightHandItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			RightHandItem->SetActorLocation(FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 250));
-			RightHandItem = nullptr;
-		}
+		dropLoc = TraceEnd;
 	}
-	
+
+	// Place item - TO:DO - Replace "0" with DropItemIndex when working
+	HeldItems[0]->ToggleItemCollision(true);
+	HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	HeldItems[0]->SetActorLocation(dropLoc);
+	HeldItems.Remove(0);
 }
+	
 

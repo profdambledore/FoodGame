@@ -36,9 +36,9 @@ void AParentItem::SetupItem(FItem NewItem)
 	ItemMesh->SetStaticMesh(NewItem.Mesh);
 }
 
-bool AParentItem::GetTwoHandedItem()
+float AParentItem::GetItemWeight()
 {
-	return Data.bRequiresTwoHands;
+	return Data.ItemWeight;
 }
 
 FString AParentItem::GetItemName()
@@ -57,7 +57,6 @@ void AParentItem::ToggleItemCollision(bool bSetCollisionOn)
 		// Disable
 		ItemMesh->SetSimulatePhysics(false);
 		ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
 	};
 }
 

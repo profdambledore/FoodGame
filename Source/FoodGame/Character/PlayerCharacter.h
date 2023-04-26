@@ -8,6 +8,7 @@
 // Unreal Includes
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Blueprint/UserWidget.h"
@@ -17,6 +18,8 @@
 #include "Item/ItemData.h"
 
 #include "PlayerCharacter.generated.h"
+
+class AParentItem;
 
 UCLASS()
 class FOODGAME_API APlayerCharacter : public ACharacter
@@ -45,21 +48,17 @@ protected:
 
 	// Action
 	void Interact();
+	void ToggleDropMode();
+
+	void PrimaryActionPress();
+	void PrimaryActionRelease();
+	void PrimaryActionTimer();
+
+	//void SecondaryActionPress();
+	//void SecondaryActionRelease();
 
 	// Camera functions
 	void SwitchCamera();
-
-	// Arm functions
-	void LeftArmPressed();
-	void LeftArmReleased();
-	void LeftArmTimer();
-
-	void RightArmPressed();
-	void RightArmReleased();
-	void RightArmTimer();
-
-	void EnableArm(bool bIsLeft);
-	void DisableArm(bool bIsLeft);
 
 	UFUNCTION()
 		void OnIRBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -67,8 +66,10 @@ protected:
 	UFUNCTION()
 		void OnIREndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	// Inspect
-	void UpdateInspectWidget(bool bEnable, FVector Location);
+	// Items
+	bool CheckCanCollectItem(float NewItemWeight);
+	void CollectItem(AParentItem* NewItem);
+	void DropItem(int DropItemIndex);
 
 public:	
 	// References
@@ -92,20 +93,10 @@ public:
 		USphereComponent* InteractablesRange;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
-		USceneComponent* LeftHand;
+		USceneComponent* ItemPosition;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
-		USceneComponent* RightHand;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
-		UWidgetComponent* InspectWidgetComponent;
-
-	// Hand Pointers
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
-		class AParentItem* LeftHandItem = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
-		class AParentItem* RightHandItem = nullptr;
+		UStaticMeshComponent* PlacingMesh;
 
 protected:
 	// Interact
@@ -114,26 +105,33 @@ protected:
 	AActor* InteractableLookingAt = nullptr;
 	bool bInteractWidgetPlaced = false;
 
+	bool bDropMode = false;
+
 	// Trace Data
 	FHitResult TraceHit = FHitResult(ForceInit);
 	FVector TraceStart;
 	FVector TraceEnd;
-	ECollisionChannel TraceChannel = ECC_GameTraceChannel1;
-	bool bInteractTrace;
+	ECollisionChannel TraceChannel;
+	bool bTrace;
 
 	// Camera
 	bool bInThirdPerson;
 
-	// Arms
-	float ArmPressTime = 0.5f;
+	// Items
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
+		TArray<AParentItem*> HeldItems;
+	int CurrentHeldItem = 0;
 
-	// Left Arm
-	TEnumAsByte<EArmState> LeftArmState = EArmState::Disabled;
-	bool bLeftArmPressed = false;
-	FTimerHandle LeftArmHandle;
+	float CurrentWeight;
+	float MaxWeight = 3.0f;
 
-	// Right Arm
-	TEnumAsByte<EArmState> RightArmState = EArmState::Disabled;
-	bool bRightArmPressed = false;
-	FTimerHandle RightArmHandle;
+	// Actions
+	float ActionPressTime = 0.5f;
+
+	// Primary Action
+	TEnumAsByte<EActionState> PrimaryActionState = EActionState::Disabled;
+	bool bPrimaryActionPressed = false;
+	FTimerHandle PrimaryActionHandle;
+
+	
 };

@@ -27,7 +27,7 @@ public:
 		void SetupItem(FItem NewItem);
 
 	UFUNCTION(BlueprintCallable)
-		bool GetTwoHandedItem();
+		float GetItemWeight();
 
 	UFUNCTION(BlueprintCallable)
 		FString GetItemName();

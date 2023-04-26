@@ -19,7 +19,7 @@ class FOODGAME_API UItemData : public UBlueprintFunctionLibrary
 };
 
 UENUM()
-enum EArmState
+enum EActionState
 {
 	Disabled UMETA(Display Name = "Disabled"),
 	Pressed UMETA(Display Name = "Pressed"),
@@ -67,7 +67,7 @@ public:
 		UStaticMesh* Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		bool bRequiresTwoHands;
+		float ItemWeight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TArray<FItemUsage> UsageRules;

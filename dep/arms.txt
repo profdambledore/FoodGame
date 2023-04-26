@@ -1,0 +1,164 @@
+### CPP
+
+PlayerInputComponent->BindAction("LeftArm", IE_Pressed, this, &APlayerCharacter::LeftArmPressed);
+	PlayerInputComponent->BindAction("LeftArm", IE_Released, this, &APlayerCharacter::LeftArmReleased);
+	PlayerInputComponent->BindAction("RightArm", IE_Pressed, this, &APlayerCharacter::RightArmPressed);
+	PlayerInputComponent->BindAction("RightArm", IE_Released, this, &APlayerCharacter::RightArmReleased);
+
+void APlayerCharacter::LeftArmPressed()
+{
+	bLeftArmPressed = true;
+	if (LeftArmState == EArmState::Pressed) {
+		// Disable and set arm state to Disabled
+		LeftArmState = EArmState::Disabled;
+		DisableArm(true);
+	}
+	else if (InteractableLookingAt != nullptr) {
+		if (LeftArmState != EArmState::Pressed) {
+			GetWorld()->GetTimerManager().ClearTimer(LeftArmHandle);
+			GetWorld()->GetTimerManager().SetTimer(LeftArmHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::LeftArmTimer), ArmPressTime, false, ArmPressTime);
+
+			EnableArm(true);
+		}
+	}
+}
+
+void APlayerCharacter::LeftArmReleased()
+{
+	bLeftArmPressed = false;
+	if (LeftArmState == EArmState::Held) {
+		// Disable and set arm state to Disabled
+		LeftArmState = EArmState::Disabled;
+		DisableArm(true);
+	}
+}
+
+void APlayerCharacter::LeftArmTimer()
+{
+	if (bLeftArmPressed) {
+		// We are holding, set state to Held
+		UE_LOG(LogTemp, Warning, TEXT("Held"));
+		LeftArmState = EArmState::Held;
+	}
+	else {
+		// We have pressed, set state to Pressed
+		UE_LOG(LogTemp, Warning, TEXT("LMB Pressed"));
+		LeftArmState = EArmState::Pressed;
+	}
+}
+
+void APlayerCharacter::RightArmPressed()
+{
+	bRightArmPressed = true;
+	if (RightArmState == EArmState::Pressed) {
+		// Disable and set arm state to Disabled
+		RightArmState = EArmState::Disabled;
+		DisableArm(false);
+	}
+	else if (InteractableLookingAt != nullptr) {
+		if (RightArmState != EArmState::Pressed) {
+		GetWorld()->GetTimerManager().ClearTimer(RightArmHandle);
+		GetWorld()->GetTimerManager().SetTimer(RightArmHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::RightArmTimer), ArmPressTime, false, ArmPressTime);
+
+		EnableArm(false);
+		}
+	}
+}
+
+void APlayerCharacter::RightArmReleased()
+{
+	bRightArmPressed = false;
+	if (RightArmState == EArmState::Held) {
+		// Disable and set arm state to Disabled
+		RightArmState = EArmState::Disabled;
+		DisableArm(false);
+	}
+}
+
+void APlayerCharacter::RightArmTimer()
+{
+	if (bRightArmPressed) {
+		// We are holding, set state to Held
+		UE_LOG(LogTemp, Warning, TEXT("Held"));
+		RightArmState = EArmState::Held;
+	}
+	else {
+		// We have pressed, set state to Pressed
+		UE_LOG(LogTemp, Warning, TEXT("Pressed"));
+		RightArmState = EArmState::Pressed;
+	}
+}
+
+void APlayerCharacter::EnableArm(bool bIsLeft)
+{
+	// Check if there is an interactable being looked at
+	if (InteractableLookingAt) {
+		// Check is the interactable is an item
+		if (InteractableLookingAt->IsA(AParentItem::StaticClass())) {
+			// If it is, cast to AParentItem
+			AParentItem* laItem = Cast<AParentItem>(InteractableLookingAt);
+			// Then check if it is a two handed item.  Check if the right hand is filled
+			// Else, check which hand to attach it to and store pointer
+			if (bIsLeft) {
+				LeftHandItem = laItem;
+				laItem->ToggleItemCollision(false);
+				laItem->AttachToComponent(LeftHand, FAttachmentTransformRules::SnapToTargetIncludingScale);
+				
+			}
+			else {
+				RightHandItem = laItem;
+				laItem->ToggleItemCollision(false);
+				laItem->AttachToComponent(RightHand, FAttachmentTransformRules::SnapToTargetIncludingScale);
+			}
+		}
+	}
+	
+
+}
+
+void APlayerCharacter::DisableArm(bool bIsLeft)
+{
+	if (bIsLeft) {
+		if (LeftHandItem) {
+			LeftHandItem->ToggleItemCollision(true);
+			LeftHandItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			LeftHandItem->SetActorLocation(FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 250));
+			LeftHandItem = nullptr;
+		}
+	}
+	else {
+		if (RightHandItem) {
+			RightHandItem->ToggleItemCollision(true);
+			RightHandItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			RightHandItem->SetActorLocation(FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 250));
+			RightHandItem = nullptr;
+		}
+	}
+	
+}
+
+### .H
+	// Arm functions
+	void LeftArmPressed();
+	void LeftArmReleased();
+	void LeftArmTimer();
+
+	void RightArmPressed();
+	void RightArmReleased();
+	void RightArmTimer();
+
+	void EnableArm(bool bIsLeft);
+	void DisableArm(bool bIsLeft);
+
+	// Arms
+	float ArmPressTime = 0.5f;
+
+	// Left Arm
+	TEnumAsByte<EArmState> LeftArmState = EArmState::Disabled;
+	bool bLeftArmPressed = false;
+	FTimerHandle LeftArmHandle;
+
+	// Right Arm
+	TEnumAsByte<EArmState> RightArmState = EArmState::Disabled;
+	bool bRightArmPressed = false;
+	FTimerHandle RightArmHandle;
