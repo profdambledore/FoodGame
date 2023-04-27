@@ -32,7 +32,7 @@ APlayerCharacter::APlayerCharacter()
 
 	// Interaction
 	InteractablesRange = CreateDefaultSubobject<USphereComponent>(TEXT("Interactables Collision"));
-	InteractablesRange->SetSphereRadius(InteractRange);
+	InteractablesRange->SetSphereRadius(InteractRange - 50);
 	InteractablesRange->SetupAttachment(GetMesh(), "");
 
 	ItemPosition = CreateDefaultSubobject<USceneComponent>(TEXT("Left Hand"));
@@ -61,7 +61,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (InteractablesInRange.Num() != 0 && !bDropMode) {
+	if (InteractablesInRange.Num() != 0 && !bPlaceMode) {
 		// Trace interactables infront of the player
 		// Generate information for the trace
 		TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
@@ -84,6 +84,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 			}
 		}
 	}
+	// Place mode trace
 	else if (PlacingMesh->IsVisible()) {
 		// Trace to see where to place the hologram
 		TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
@@ -120,6 +121,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	// Add Action Binds
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &APlayerCharacter::Interact);
 	PlayerInputComponent->BindAction("Camera", IE_Pressed, this, &APlayerCharacter::SwitchCamera);
+	PlayerInputComponent->BindAction("PrimaryAction", IE_Pressed, this, &APlayerCharacter::PrimaryActionPress);
+	PlayerInputComponent->BindAction("PrimaryAction", IE_Released, this, &APlayerCharacter::PrimaryActionRelease);
+	PlayerInputComponent->BindAction("PlaceMode", IE_Pressed, this, &APlayerCharacter::TogglePlaceMode);
 }
 
 // --- Movement ---
@@ -152,6 +156,38 @@ void APlayerCharacter::CameraY(float AxisValue)
 	if (AxisValue != 0) {
 		// Rotate on the Y axis based on the input's axis value
 		AddControllerPitchInput(AxisValue);
+	}
+}
+
+void APlayerCharacter::ChangeItem(float AxisValue)
+{
+	if (AxisValue == 1.0f) {
+		if (HeldItems.Num() == 0) { 
+			// Do nothing
+		}
+		else if (HeldItems.Num() == 1) {
+			CurrentHeldItem = 0;
+		}
+		else if (CurrentHeldItem + 1 >= HeldItems.Num()) {
+			CurrentHeldItem = 0;
+		}
+		else {
+			CurrentHeldItem++;
+		}
+	}
+	else if (AxisValue == -1.0f) {
+		if (HeldItems.Num() == 0) {
+			// Do nothing
+		}
+		else if (HeldItems.Num() == 1) {
+			CurrentHeldItem = 0;
+		}
+		else if (CurrentHeldItem - 1 <= -1) {
+			CurrentHeldItem = 0;
+		}
+		else {
+			CurrentHeldItem--;
+		}
 	}
 }
 
@@ -197,25 +233,23 @@ void APlayerCharacter::Interact()
 	
 }
 
-void APlayerCharacter::ToggleDropMode()
+void APlayerCharacter::TogglePlaceMode()
 {
-	bDropMode = !bDropMode;
+	bPlaceMode = !bPlaceMode;
 }
 
 // --- Actions ---
 void APlayerCharacter::PrimaryActionPress()
 {
-	if (bDropMode) {
+	if (bPlaceMode == true) {
 		bPrimaryActionPressed = true;
 		if (PrimaryActionState == EActionState::Pressed) {
 			// Disable and set arm state to Disabled
 			PrimaryActionState = EActionState::Disabled;
 		}
-		else if (InteractableLookingAt != nullptr) {
-			if (PrimaryActionState != EActionState::Pressed) {
-				GetWorld()->GetTimerManager().ClearTimer(PrimaryActionHandle);
-				GetWorld()->GetTimerManager().SetTimer(PrimaryActionHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::PrimaryActionTimer), ActionPressTime, false, ActionPressTime);
-			}
+		else if (PrimaryActionState != EActionState::Pressed) {
+			GetWorld()->GetTimerManager().ClearTimer(PrimaryActionHandle);
+			GetWorld()->GetTimerManager().SetTimer(PrimaryActionHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::PrimaryActionTimer), ActionPressTime, false, ActionPressTime);
 		}
 	}
 	else {
@@ -235,11 +269,11 @@ void APlayerCharacter::PrimaryActionPress()
 
 void APlayerCharacter::PrimaryActionRelease()
 {
-	bPrimaryActionPressed = false;
-	if (PrimaryActionState == EActionState::Held) {
+	if (bPlaceMode == true) {
+		bPrimaryActionPressed = false;
 		PrimaryActionState = EActionState::Disabled;
 
-		DropItem(0);
+		PlaceItem(0);
 
 		// If hologram, end hologram
 		if (PlacingMesh->IsVisible()) {
@@ -250,6 +284,7 @@ void APlayerCharacter::PrimaryActionRelease()
 
 void APlayerCharacter::PrimaryActionTimer()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Timer"));
 	if (bPrimaryActionPressed) {
 		// We are holding, set state to Held
 		PrimaryActionState = EActionState::Held;
@@ -279,15 +314,18 @@ bool APlayerCharacter::CheckCanCollectItem(float NewItemWeight)
 void APlayerCharacter::CollectItem(AParentItem* NewItem)
 {
 	// Add the new item to the array
+	NewItem->ToggleItemCollision(false);
+	NewItem->AttachToComponent(ItemPosition, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	HeldItems.Add(NewItem);
+
 }
 
-void APlayerCharacter::DropItem(int DropItemIndex)
+void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 {
 	TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
 	TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
 	TraceChannel = ECC_GameTraceChannel1;
-	FVector dropLoc;
+	FVector placeLoc;
 
 	FCollisionQueryParams TraceParams(FName(TEXT("Drop Trace")), true, NULL);
 	TraceParams.bTraceComplex = true;
@@ -296,16 +334,16 @@ void APlayerCharacter::DropItem(int DropItemIndex)
 	bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
 	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
 	if (bTrace) {
-		dropLoc = TraceHit.Location;
+		placeLoc = TraceHit.Location;
 	}
 	else {
-		dropLoc = TraceEnd;
+		placeLoc = TraceEnd;
 	}
 
 	// Place item - TO:DO - Replace "0" with DropItemIndex when working
 	HeldItems[0]->ToggleItemCollision(true);
 	HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	HeldItems[0]->SetActorLocation(dropLoc);
+	HeldItems[0]->SetActorLocation(placeLoc);
 	HeldItems.Remove(0);
 }
 	

@@ -45,10 +45,11 @@ protected:
 	void MoveY(float AxisValue);
 	void CameraX(float AxisValue);
 	void CameraY(float AxisValue);
+	void ChangeItem(float AxisValue);
 
 	// Action
 	void Interact();
-	void ToggleDropMode();
+	void TogglePlaceMode();
 
 	void PrimaryActionPress();
 	void PrimaryActionRelease();
@@ -69,7 +70,7 @@ protected:
 	// Items
 	bool CheckCanCollectItem(float NewItemWeight);
 	void CollectItem(AParentItem* NewItem);
-	void DropItem(int DropItemIndex);
+	void PlaceItem(int PlaceItemIndex);
 
 public:	
 	// References
@@ -100,12 +101,12 @@ public:
 
 protected:
 	// Interact
-	float InteractRange = 120.0f;
+	float InteractRange = 170.0f;
 	TArray<AActor*> InteractablesInRange;
 	AActor* InteractableLookingAt = nullptr;
 	bool bInteractWidgetPlaced = false;
 
-	bool bDropMode = false;
+	bool bPlaceMode = false;
 
 	// Trace Data
 	FHitResult TraceHit = FHitResult(ForceInit);
@@ -122,7 +123,7 @@ protected:
 		TArray<AParentItem*> HeldItems;
 	int CurrentHeldItem = 0;
 
-	float CurrentWeight;
+	float CurrentWeight = 0.0f;
 	float MaxWeight = 3.0f;
 
 	// Actions
