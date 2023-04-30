@@ -8,6 +8,7 @@
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
+#include "Components/SceneComponent.h"
 
 #include "ItemData.generated.h"
 
@@ -24,6 +25,13 @@ enum EActionState
 	Disabled UMETA(Display Name = "Disabled"),
 	Pressed UMETA(Display Name = "Pressed"),
 	Held UMETA(Display Name = "Held"),
+};
+
+UENUM()
+enum EStationType
+{
+	ChoppingBoard UMETA(Display Name = "Chopping Board"),
+	Oven UMETA(Display Name = "Oven"),
 };
 
 UENUM()
@@ -73,3 +81,44 @@ public:
 		TArray<FItemUsage> UsageRules;
 };
 
+USTRUCT(BlueprintType)
+struct FItemSlot
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString Slot;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FTransform Transform;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FString> AcceptedItems;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FString ItemInSlot;
+};
+
+USTRUCT(BlueprintType)
+struct FRecipe : public FTableRowBase
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		FString ID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TEnumAsByte<EStationType> Station;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		FString ContextItem;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TArray<FString> InputItems;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TArray<FString> OutputItems;
+
+};

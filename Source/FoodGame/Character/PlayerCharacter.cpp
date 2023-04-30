@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Item/ParentItem.h"
+#include "Station/ParentStation.h"
 #include "Character/InspectWidget.h"
 #include "Character/PlayerCharacter.h"
 
@@ -62,48 +63,11 @@ void APlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (InteractablesInRange.Num() != 0 && !bPlaceMode) {
-		// Trace interactables infront of the player
-		// Generate information for the trace
-		TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
-		TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
-		TraceChannel = ECC_GameTraceChannel1;
-
-		FCollisionQueryParams TraceParams(FName(TEXT("Interact Trace")), true, NULL);
-		TraceParams.bTraceComplex = true;
-		TraceParams.bReturnPhysicalMaterial = true;
-
-		bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
-		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
-		if (bTrace) {
-			if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
-				// Also set InteractableLookingAt to OtherActor
-				InteractableLookingAt = TraceHit.Actor.Get();
-			}
-			else {
-				InteractableLookingAt = nullptr;
-			}
-		}
+		InteractTrace();
 	}
 	// Place mode trace
 	else if (PlacingMesh->IsVisible()) {
-		// Trace to see where to place the hologram
-		TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
-		TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
-		TraceChannel = ECC_GameTraceChannel1;
-		FVector dropLoc;
-
-		FCollisionQueryParams TraceParams(FName(TEXT("Drop Trace")), true, NULL);
-		TraceParams.bTraceComplex = true;
-		TraceParams.bReturnPhysicalMaterial = true;
-
-		bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
-		DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
-		if (bTrace) {
-			PlacingMesh->SetWorldLocation(TraceHit.Location);
-		}
-		else {
-			PlacingMesh->SetWorldLocation(TraceEnd);
-		}
+		PlacingMesh->SetWorldTransform(PlaceTrace());
 	}
 }
 
@@ -273,7 +237,7 @@ void APlayerCharacter::PrimaryActionRelease()
 		bPrimaryActionPressed = false;
 		PrimaryActionState = EActionState::Disabled;
 
-		PlaceItem(0);
+		PlaceItem(CurrentHeldItem);
 
 		// If hologram, end hologram
 		if (PlacingMesh->IsVisible()) {
@@ -289,10 +253,12 @@ void APlayerCharacter::PrimaryActionTimer()
 		// We are holding, set state to Held
 		PrimaryActionState = EActionState::Held;
 
-		// Begin hologram
-		PlacingMesh->SetVisibility(true, false);
-		PlacingMesh->SetStaticMesh(HeldItems[0]->ItemMesh->GetStaticMesh());
+		// Begin hologram if an item is held
+		if (HeldItems.Num() != 0) {
+			PlacingMesh->SetVisibility(true, false);
+			PlacingMesh->SetStaticMesh(HeldItems[0]->ItemMesh->GetStaticMesh());
 
+		}
 	}
 	else {
 		// We have pressed, set state to Pressed
@@ -317,34 +283,124 @@ void APlayerCharacter::CollectItem(AParentItem* NewItem)
 	NewItem->ToggleItemCollision(false);
 	NewItem->AttachToComponent(ItemPosition, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	HeldItems.Add(NewItem);
-
 }
 
 void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 {
+	if (HeldItems.Num() != 0) {
+		TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
+		TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
+		TraceChannel = ECC_GameTraceChannel2;
+		FVector placeLoc;
+
+		FCollisionQueryParams TraceParams(FName(TEXT("Drop Trace")), true, NULL);
+		TraceParams.bTraceComplex = true;
+		TraceParams.bReturnPhysicalMaterial = true;
+
+		bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
+		//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
+		if (bTrace) {
+			if (TraceHit.Actor->IsA(AParentStation::StaticClass())) {
+				// If it is, cast to the station
+				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
+				HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+
+				FString SlotName = (LastHitStation->GetStationSlot(HeldItems[CurrentHeldItem]->GetItemName()).Slot);
+				FTransform slotTransform = LastHitStation->GetSlotTransform(SlotName);
+				HeldItems[0]->SetActorTransform(FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f)));
+
+				HeldItems[0]->AttachToActor(LastHitStation, FAttachmentTransformRules::KeepWorldTransform);
+				HeldItems[0]->AttachedTo = LastHitStation;
+				HeldItems.RemoveAt(CurrentHeldItem);
+			}
+			else {
+				HeldItems[0]->ToggleItemCollision(true);
+				HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+				HeldItems[0]->SetActorLocation(TraceHit.Location);
+				HeldItems.RemoveAt(CurrentHeldItem);
+			}
+		}
+		else {
+			HeldItems[0]->ToggleItemCollision(true);
+			HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			HeldItems[0]->SetActorLocation(TraceEnd);
+			HeldItems.RemoveAt(CurrentHeldItem);
+		}
+		// Place item - TO:DO - Replace "0" with DropItemIndex when working
+	}
+}
+
+// --- Tracing ---
+void APlayerCharacter::InteractTrace()
+{
+	// Trace interactables infront of the player
+	// Generate information for the trace
 	TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
 	TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
 	TraceChannel = ECC_GameTraceChannel1;
-	FVector placeLoc;
+
+	FCollisionQueryParams TraceParams(FName(TEXT("Interact Trace")), true, NULL);
+	TraceParams.bTraceComplex = true;
+	TraceParams.bReturnPhysicalMaterial = true;
+
+	bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
+	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
+
+	// If the trace hits something...
+	if (bTrace) {
+		// ... check to see if it is of class AParentItem
+		if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
+			// If it is, set InteractableLookingAt
+			InteractableLookingAt = TraceHit.Actor.Get();
+		}
+	}
+	// Else, set InteractableLookingAt to nullptr
+	else {
+		InteractableLookingAt = nullptr;
+	}
+}
+
+FTransform APlayerCharacter::PlaceTrace()
+{
+	// Trace to see where to place the hologram
+	TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
+	TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
+	TraceChannel = ECC_GameTraceChannel2;
 
 	FCollisionQueryParams TraceParams(FName(TEXT("Drop Trace")), true, NULL);
 	TraceParams.bTraceComplex = true;
 	TraceParams.bReturnPhysicalMaterial = true;
 
 	bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
-	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
-	if (bTrace) {
-		placeLoc = TraceHit.Location;
-	}
-	else {
-		placeLoc = TraceEnd;
-	}
+	//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
 
-	// Place item - TO:DO - Replace "0" with DropItemIndex when working
-	HeldItems[0]->ToggleItemCollision(true);
-	HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	HeldItems[0]->SetActorLocation(placeLoc);
-	HeldItems.Remove(0);
+	// If the trace hits something...
+	if (bTrace) {
+		// ...check if it is of class ParentStation
+		if (TraceHit.Actor->IsA(AParentStation::StaticClass())) {
+			// If it is, cast to the station if we haven't casted to it yet.
+			if (LastHitStation == nullptr) {
+				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
+			}
+			else if (TraceHit.Actor->GetName() != LastHitStation->GetName() ){
+				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
+			}
+
+			// Check if the Station has a slot for the current item
+			FString SlotName = (LastHitStation->GetStationSlot(HeldItems[CurrentHeldItem]->GetItemName()).Slot);
+			FTransform slotTransform = LastHitStation->GetSlotTransform(SlotName);
+			return FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f));
+		}
+		// If it hits something and it isn't an AParentStation, rteurn the hit location and make LastHitStation nullptr
+		else {
+			return FTransform(FRotator{}, TraceHit.Location, FVector(1.0f, 1.0f, 1.0f));
+		}
+	}
+	// Else, return the trace end
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("End"));
+		return FTransform(FRotator{}, TraceEnd, FVector(1.0f, 1.0f, 1.0f));
+	}
 }
 	
 

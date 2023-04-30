@@ -20,6 +20,7 @@
 #include "PlayerCharacter.generated.h"
 
 class AParentItem;
+class AParentStation;
 
 UCLASS()
 class FOODGAME_API APlayerCharacter : public ACharacter
@@ -72,6 +73,10 @@ protected:
 	void CollectItem(AParentItem* NewItem);
 	void PlaceItem(int PlaceItemIndex);
 
+	// Traces
+	void InteractTrace();
+	FTransform PlaceTrace();
+
 public:	
 	// References
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -103,8 +108,10 @@ protected:
 	// Interact
 	float InteractRange = 170.0f;
 	TArray<AActor*> InteractablesInRange;
-	AActor* InteractableLookingAt = nullptr;
-	bool bInteractWidgetPlaced = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
+		AActor* InteractableLookingAt = nullptr;
+
 
 	bool bPlaceMode = false;
 
@@ -114,6 +121,8 @@ protected:
 	FVector TraceEnd;
 	ECollisionChannel TraceChannel;
 	bool bTrace;
+
+	class AParentStation* LastHitStation = nullptr;
 
 	// Camera
 	bool bInThirdPerson;

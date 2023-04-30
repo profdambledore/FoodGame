@@ -43,7 +43,7 @@ float AParentItem::GetItemWeight()
 
 FString AParentItem::GetItemName()
 {
-	return Data.Name;
+	return Data.ID;
 }
 
 void AParentItem::ToggleItemCollision(bool bSetCollisionOn)
@@ -56,7 +56,7 @@ void AParentItem::ToggleItemCollision(bool bSetCollisionOn)
 	else {
 		// Disable
 		ItemMesh->SetSimulatePhysics(false);
-		ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	};
 }
 

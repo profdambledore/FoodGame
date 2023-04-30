@@ -51,4 +51,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<FItemUsage> UsagePoints;
 
+	AActor* AttachedTo = nullptr;
+
 };
