@@ -10,6 +10,7 @@ AParentStation::AParentStation()
 	PrimaryActorTick.bCanEverTick = true;
 
 	DefaultMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Default Mesh"));
+	CraftingRange = CreateDefaultSubobject<UBoxComponent>(TEXT("Crafting Range"));
 
 	// Get Data Table object and store it
 	ConstructorHelpers::FObjectFinder<UDataTable>RecipieDTObject(TEXT("/Game/Data/DT_Recipes"));
@@ -29,42 +30,19 @@ void AParentStation::Tick(float DeltaTime)
 
 }
 
-FItemSlot AParentStation::GetStationSlot(FString Name)
+bool AParentStation::GetSlotContextItem(FString ID)
 {
-	int slotIndex = -1;
-
-	// Check each item slot in the array for the input
-	for (int i = 0; i < ItemSlots.Num(); i++) {
-		for (int j = 0; j < ItemSlots[i].AcceptedItems.Num(); j++) {
-			if (ItemSlots[i].AcceptedItems[j] == Name) {
-				return ItemSlots[i];
-			}
-			else if (ItemSlots[i].AcceptedItems[j] == "items_all") {
-				slotIndex = i;
-			}
+	for (int i = 0; i < ContextItemSlot.AcceptedItems.Num(); i++) {
+		if (ContextItemSlot.AcceptedItems[i] == ID) {
+			return true;
 		}
 	}
-
-	// If an example of "items_all" was found, then return that slot
-	if (slotIndex != -1) {
-		return ItemSlots[slotIndex];
+	return false;
 	}
-	// Else, return an empty slot
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("Empty"));
-		return FItemSlot{};
-	}
-	
-}
 
-FTransform AParentStation::GetSlotTransform(FString SlotName)
+FTransform AParentStation::GetSlotTransform()
 {
-	for (int i = 0; i < ItemSlots.Num(); i++) {
-		if (ItemSlots[i].Slot == SlotName) {
-			return ItemSlots[i].Transform;
-		}
-	}
-	return FTransform{};
+	return ContextItemSlot.Transform;
 }
 
 FRecipe AParentStation::FindRecipe()

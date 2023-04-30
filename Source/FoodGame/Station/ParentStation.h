@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 
 #include "Item/ItemData.h"
+#include "Components/BoxComponent.h"
 #include "Engine/DataTable.h"
 
 #include "ParentStation.generated.h"
@@ -23,10 +24,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-		FItemSlot GetStationSlot(FString Name);
+		bool GetSlotContextItem(FString ID);
 
 	UFUNCTION(BlueprintCallable)
-		FTransform GetSlotTransform(FString SlotName);
+		FTransform GetSlotTransform();
 
 	UFUNCTION(BlueprintCallable)
 		FRecipe FindRecipe();
@@ -40,13 +41,16 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
 		UStaticMeshComponent* DefaultMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+		UBoxComponent* CraftingRange;
+
 	// Data for station type
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slots")
 		TEnumAsByte<EStationType> StationType;
 
 	// Data for item slots.  If a slot has item item_all, all items can be placed there
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slots")
-		TArray<FItemSlot> ItemSlots;
+		FItemSlot ContextItemSlot;
 
 	// Pointer to the recipe data table
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data Table")
@@ -54,7 +58,4 @@ public:
 
 	// Station Recipes
 	TArray<FRecipe> StationRecipes;
-
-	// Current Stored Recipe
-
 };

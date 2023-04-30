@@ -298,21 +298,29 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 		TraceParams.bReturnPhysicalMaterial = true;
 
 		bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
-		//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
 		if (bTrace) {
 			if (TraceHit.Actor->IsA(AParentStation::StaticClass())) {
 				// If it is, cast to the station
 				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
 				HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-				FString SlotName = (LastHitStation->GetStationSlot(HeldItems[CurrentHeldItem]->GetItemName()).Slot);
-				FTransform slotTransform = LastHitStation->GetSlotTransform(SlotName);
-				HeldItems[0]->SetActorTransform(FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f)));
-
-				HeldItems[0]->AttachToActor(LastHitStation, FAttachmentTransformRules::KeepWorldTransform);
-				HeldItems[0]->AttachedTo = LastHitStation;
-				HeldItems.RemoveAt(CurrentHeldItem);
+				// Check if the item is an accepted context item
+				if (LastHitStation->GetSlotContextItem(HeldItems[CurrentHeldItem]->GetItemName())) {
+					FTransform slotTransform = LastHitStation->GetSlotTransform();
+					HeldItems[0]->SetActorTransform(FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f)));
+					HeldItems[0]->AttachToActor(LastHitStation, FAttachmentTransformRules::KeepWorldTransform);
+					HeldItems[0]->AttachedTo = LastHitStation;
+					HeldItems.RemoveAt(CurrentHeldItem);
+				}
+				// If it isn't, place it on the station
+				else {
+					HeldItems[0]->ToggleItemCollision(true);
+					HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+					HeldItems[0]->SetActorLocation(TraceHit.Location);
+					HeldItems.RemoveAt(CurrentHeldItem);
+				}
 			}
+			// Else, place it on the surface
 			else {
 				HeldItems[0]->ToggleItemCollision(true);
 				HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
@@ -320,6 +328,7 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 				HeldItems.RemoveAt(CurrentHeldItem);
 			}
 		}
+		// Else, drop it in mid-air
 		else {
 			HeldItems[0]->ToggleItemCollision(true);
 			HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
@@ -372,7 +381,6 @@ FTransform APlayerCharacter::PlaceTrace()
 	TraceParams.bReturnPhysicalMaterial = true;
 
 	bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
-	//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
 
 	// If the trace hits something...
 	if (bTrace) {
@@ -386,10 +394,14 @@ FTransform APlayerCharacter::PlaceTrace()
 				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
 			}
 
-			// Check if the Station has a slot for the current item
-			FString SlotName = (LastHitStation->GetStationSlot(HeldItems[CurrentHeldItem]->GetItemName()).Slot);
-			FTransform slotTransform = LastHitStation->GetSlotTransform(SlotName);
-			return FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f));
+			// Check if the item is an accepted context item
+			if (LastHitStation->GetSlotContextItem(HeldItems[CurrentHeldItem]->GetItemName())) {
+				FTransform slotTransform = LastHitStation->GetSlotTransform();
+				return FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f));
+			}
+			else {
+				return FTransform(FRotator{}, TraceHit.Location, FVector(1.0f, 1.0f, 1.0f));
+			}
 		}
 		// If it hits something and it isn't an AParentStation, rteurn the hit location and make LastHitStation nullptr
 		else {
