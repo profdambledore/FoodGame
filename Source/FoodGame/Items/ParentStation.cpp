@@ -10,6 +10,7 @@ AParentStation::AParentStation()
 	PrimaryActorTick.bCanEverTick = true;
 
 	CraftingRange = CreateDefaultSubobject<UBoxComponent>(TEXT("Crafting Range"));
+	CraftingRange->SetupAttachment(ItemMesh, "");
 
 	// Get Data Table object and store it
 	ConstructorHelpers::FObjectFinder<UDataTable>RecipeDTObject(TEXT("/Game/Data/DT_Recipes"));
@@ -142,7 +143,16 @@ void AParentStation::CraftRecipe()
 
 	// Change any items currently in the range to the new items
 	for (int i = 0; i < ItemsInCraftingRange.Num(); i++) {
-		//ItemsInCraftingRange[i]->SetupItem()
+		ItemsInCraftingRange[i]->SetupItem(*Items->FindRow<FItemData>(FName(*newItems[0]), "", false));
+		newItems.RemoveAt(0);
+	}
+	
+	// For any remaining items in newItems, create a new item class
+	for (int j = 0; j < newItems.Num(); j++) {
+		UE_LOG(LogTemp, Warning, TEXT("NewItem"));
+		FItemData* newData = Items->FindRow<FItemData>(FName(*newItems[0]), "", false);
+		AParentItem* nI = GetWorld()->SpawnActor<AParentItem>(newData->Class, CraftingRange->GetComponentLocation() + FVector(0.0f, 0.0f, 30.0f), FRotator{});
+		nI->SetupItem(*newData);
 	}
 
 }

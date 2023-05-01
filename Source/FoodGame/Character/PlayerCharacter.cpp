@@ -84,6 +84,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Camera", IE_Pressed, this, &APlayerCharacter::SwitchCamera);
 	PlayerInputComponent->BindAction("PrimaryAction", IE_Pressed, this, &APlayerCharacter::PrimaryActionPress);
 	PlayerInputComponent->BindAction("PrimaryAction", IE_Released, this, &APlayerCharacter::PrimaryActionRelease);
+	PlayerInputComponent->BindAction("SecondaryAction", IE_Pressed, this, &APlayerCharacter::SecondaryActionPress);
+	PlayerInputComponent->BindAction("SecondaryAction", IE_Released, this, &APlayerCharacter::SecondaryActionRelease);
 	PlayerInputComponent->BindAction("PlaceMode", IE_Pressed, this, &APlayerCharacter::TogglePlaceMode);
 }
 
@@ -265,6 +267,24 @@ void APlayerCharacter::PrimaryActionTimer()
 
 void APlayerCharacter::SecondaryActionPress()
 {
+	TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
+	TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
+	TraceChannel = ECC_GameTraceChannel2;
+	FVector placeLoc;
+
+	FCollisionQueryParams TraceParams(FName(TEXT("Drop Trace")), true, NULL);
+	TraceParams.bTraceComplex = true;
+	TraceParams.bReturnPhysicalMaterial = true;
+
+	bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
+	if (bTrace) {
+		if (TraceHit.Actor->IsA(AParentStation::StaticClass())) {
+			LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
+			if (LastHitStation->CurrentRecipes.ID != "") {
+				LastHitStation->CraftRecipe();
+			}
+		}
+	}
 }
 
 void APlayerCharacter::SecondaryActionRelease()
@@ -320,7 +340,7 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 				if (LastHitStation->GetSlotContextItem(HeldItems[CurrentHeldItem]->GetItemName())) {
 					FTransform slotTransform = LastHitStation->GetSlotTransform();
 					HeldItems[0]->SetActorTransform(FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f)));
-					HeldItems[0]->AttachToActor(LastHitStation, FAttachmentTransformRules::KeepWorldTransform);
+					HeldItems[0]->AttachToActor(LastHitStation, FAttachmentTransformRules::KeepRelativeTransform);
 					LastHitStation->AddContextItem(HeldItems[0]->GetItemName());
 					HeldItems[0]->AttachedTo = LastHitStation;
 					HeldItems.RemoveAt(CurrentHeldItem);
