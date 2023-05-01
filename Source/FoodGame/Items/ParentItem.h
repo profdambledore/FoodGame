@@ -7,7 +7,7 @@
 
 #include "Components/StaticMeshComponent.h"
 
-#include "Item/ItemData.h"
+#include "Items/ItemDataLibrary.h"
 
 #include "ParentItem.generated.h"
 
@@ -24,7 +24,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-		void SetupItem(FItem NewItem);
+		void SetupItem(FItemData NewItem);
 
 	UFUNCTION(BlueprintCallable)
 		float GetItemWeight();
@@ -39,18 +39,14 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
 		UStaticMeshComponent* ItemMesh;
 
 	// Properties
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FItem Data;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TArray<FItemUsage> UsagePoints;
+		FItemData Data;
 
 	AActor* AttachedTo = nullptr;
-
 };

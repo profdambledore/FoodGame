@@ -1,20 +1,23 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Item/ParentItem.h"
-#include "Station/ParentStation.h"
+
+#include "Items/ParentStation.h"
 
 // Sets default values
 AParentStation::AParentStation()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	DefaultMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Default Mesh"));
 	CraftingRange = CreateDefaultSubobject<UBoxComponent>(TEXT("Crafting Range"));
 
 	// Get Data Table object and store it
-	ConstructorHelpers::FObjectFinder<UDataTable>RecipieDTObject(TEXT("/Game/Data/DT_Recipes"));
-	if (RecipieDTObject.Succeeded()) { Recipes = RecipieDTObject.Object; }
+	ConstructorHelpers::FObjectFinder<UDataTable>RecipeDTObject(TEXT("/Game/Data/DT_Recipes"));
+	if (RecipeDTObject.Succeeded()) { Recipes = RecipeDTObject.Object; }
+
+	// Get Data Table object and store it
+	ConstructorHelpers::FObjectFinder<UDataTable>ItemsDTObject(TEXT("/Game/Data/DT_ItemData"));
+	if (ItemsDTObject.Succeeded()) { Items = ItemsDTObject.Object; }
 }
 
 // Called when the game starts or when spawned
@@ -62,7 +65,7 @@ bool AParentStation::GetSlotContextItem(FString ID)
 		}
 	}
 	return false;
-	}
+}
 
 FTransform AParentStation::GetSlotTransform()
 {
@@ -72,11 +75,13 @@ FTransform AParentStation::GetSlotTransform()
 void AParentStation::AddContextItem(FString ID)
 {
 	ContextItemSlot.ItemInSlot = ID;
+	FindRecipe();
 }
 
 void AParentStation::RemoveContextItem()
 {
 	ContextItemSlot.ItemInSlot = "";
+	FindRecipe();
 }
 
 void AParentStation::FindRecipe()
@@ -133,4 +138,11 @@ void AParentStation::FindRecipe()
 
 void AParentStation::CraftRecipe()
 {
+	TArray<FString> newItems = CurrentRecipes.OutputItems;
+
+	// Change any items currently in the range to the new items
+	for (int i = 0; i < ItemsInCraftingRange.Num(); i++) {
+		//ItemsInCraftingRange[i]->SetupItem()
+	}
+
 }

@@ -10,10 +10,10 @@
 #include "Engine/Texture2D.h"
 #include "Components/SceneComponent.h"
 
-#include "ItemData.generated.h"
+#include "ItemDataLibrary.generated.h"
 
 UCLASS()
-class FOODGAME_API UItemData : public UBlueprintFunctionLibrary
+class FOODGAME_API UItemDataLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 	
@@ -60,7 +60,7 @@ public:
 };
 
 USTRUCT(BlueprintType)
-struct FItem : public FTableRowBase
+struct FItemData : public FTableRowBase
 {
 	GENERATED_USTRUCT_BODY();
 
@@ -70,6 +70,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FString Name;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TSubclassOf<class AParentItem> Class;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		UStaticMesh* Mesh;

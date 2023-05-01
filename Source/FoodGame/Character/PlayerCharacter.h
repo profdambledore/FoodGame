@@ -15,7 +15,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "DrawDebugHelpers.h"
 
-#include "Item/ItemData.h"
+#include "Items/ItemDataLibrary.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -77,13 +77,10 @@ protected:
 	void InteractTrace();
 	FTransform PlaceTrace();
 
-public:	
+public:
 	// References
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		APlayerController* PC;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-		class UInspectWidget* IW = nullptr;
 
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
@@ -143,5 +140,4 @@ protected:
 	bool bPrimaryActionPressed = false;
 	FTimerHandle PrimaryActionHandle;
 
-	
 };

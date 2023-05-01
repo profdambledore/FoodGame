@@ -3,22 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "Items/ParentItem.h"
 
-#include "Item/ItemData.h"
 #include "Components/BoxComponent.h"
 #include "Engine/DataTable.h"
 
 #include "ParentStation.generated.h"
 
-class AParentItem;
-
 UCLASS()
-class FOODGAME_API AParentStation : public AActor
+class FOODGAME_API AParentStation : public AParentItem
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	AParentStation();
 
@@ -47,11 +44,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Components
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
-		UStaticMeshComponent* DefaultMesh;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 		UBoxComponent* CraftingRange;
 
@@ -66,13 +60,18 @@ public:
 	//
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 		TArray<AParentItem*> ItemsInCraftingRange;
-	//TArray<FString> ItemsInCraftingRange;
 
 	// Pointer to the recipe data table
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data Table")
 		UDataTable* Recipes = nullptr;
 
-	// Station Recipes
+	// Pointer to the item data table
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data Table")
+		UDataTable* Items = nullptr;
+
+	// Current Recipe
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Found Recipe")
 		FRecipe CurrentRecipes;
+
+	
 };

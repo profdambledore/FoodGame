@@ -1,14 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-#include "Item/ParentItem.h"
-#include "Station/ParentStation.h"
-#include "Character/InspectWidget.h"
+#include "Items/ParentItem.h"
+#include "Items/ParentStation.h"
 #include "Character/PlayerCharacter.h"
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	// Component Set Up
@@ -126,7 +123,7 @@ void APlayerCharacter::CameraY(float AxisValue)
 void APlayerCharacter::ChangeItem(float AxisValue)
 {
 	if (AxisValue == 1.0f) {
-		if (HeldItems.Num() == 0) { 
+		if (HeldItems.Num() == 0) {
 			// Do nothing
 		}
 		else if (HeldItems.Num() == 1) {
@@ -194,7 +191,7 @@ void APlayerCharacter::OnIREndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 
 void APlayerCharacter::Interact()
 {
-	
+
 }
 
 void APlayerCharacter::TogglePlaceMode()
@@ -406,7 +403,7 @@ FTransform APlayerCharacter::PlaceTrace()
 			if (LastHitStation == nullptr) {
 				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
 			}
-			else if (TraceHit.Actor->GetName() != LastHitStation->GetName() ){
+			else if (TraceHit.Actor->GetName() != LastHitStation->GetName()) {
 				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
 			}
 
@@ -430,5 +427,4 @@ FTransform APlayerCharacter::PlaceTrace()
 		return FTransform(FRotator{}, TraceEnd, FVector(1.0f, 1.0f, 1.0f));
 	}
 }
-	
 
