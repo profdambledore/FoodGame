@@ -11,6 +11,8 @@
 
 #include "ParentStation.generated.h"
 
+class AParentItem;
+
 UCLASS()
 class FOODGAME_API AParentStation : public AActor
 {
@@ -23,14 +25,23 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(BlueprintCallable)
-		bool GetSlotContextItem(FString ID);
+	bool GetSlotContextItem(FString ID);
+	FTransform GetSlotTransform();
+	void AddContextItem(FString ID);
+	void RemoveContextItem();
 
 	UFUNCTION(BlueprintCallable)
-		FTransform GetSlotTransform();
+		void FindRecipe();
 
-	UFUNCTION(BlueprintCallable)
-		FRecipe FindRecipe();
+	UFUNCTION()
+		void CraftRecipe();
+
+	UFUNCTION()
+		void OnCRBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void OnCREndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -41,21 +52,27 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
 		UStaticMeshComponent* DefaultMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 		UBoxComponent* CraftingRange;
 
 	// Data for station type
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slots")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 		TEnumAsByte<EStationType> StationType;
 
-	// Data for item slots.  If a slot has item item_all, all items can be placed there
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Slots")
+	// Data for context item slot.  
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 		FItemSlot ContextItemSlot;
+
+	//
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+		TArray<AParentItem*> ItemsInCraftingRange;
+	//TArray<FString> ItemsInCraftingRange;
 
 	// Pointer to the recipe data table
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data Table")
 		UDataTable* Recipes = nullptr;
 
 	// Station Recipes
-	TArray<FRecipe> StationRecipes;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Found Recipe")
+		FRecipe CurrentRecipes;
 };

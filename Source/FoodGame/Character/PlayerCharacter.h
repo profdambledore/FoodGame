@@ -56,8 +56,8 @@ protected:
 	void PrimaryActionRelease();
 	void PrimaryActionTimer();
 
-	//void SecondaryActionPress();
-	//void SecondaryActionRelease();
+	void SecondaryActionPress();
+	void SecondaryActionRelease();
 
 	// Camera functions
 	void SwitchCamera();

@@ -266,6 +266,14 @@ void APlayerCharacter::PrimaryActionTimer()
 	}
 }
 
+void APlayerCharacter::SecondaryActionPress()
+{
+}
+
+void APlayerCharacter::SecondaryActionRelease()
+{
+}
+
 // --- Items --- 
 bool APlayerCharacter::CheckCanCollectItem(float NewItemWeight)
 {
@@ -279,6 +287,13 @@ bool APlayerCharacter::CheckCanCollectItem(float NewItemWeight)
 
 void APlayerCharacter::CollectItem(AParentItem* NewItem)
 {
+	// Check if the NewItem is attached to a station.  If it is, 'unattach' it in the slot
+	if (NewItem->AttachedTo != nullptr) {
+		class AParentStation* attachedTo = Cast<AParentStation>(NewItem->AttachedTo);
+		attachedTo->RemoveContextItem();
+		NewItem->AttachedTo = nullptr;  attachedTo = nullptr;
+	}
+
 	// Add the new item to the array
 	NewItem->ToggleItemCollision(false);
 	NewItem->AttachToComponent(ItemPosition, FAttachmentTransformRules::SnapToTargetIncludingScale);
@@ -309,6 +324,7 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 					FTransform slotTransform = LastHitStation->GetSlotTransform();
 					HeldItems[0]->SetActorTransform(FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f)));
 					HeldItems[0]->AttachToActor(LastHitStation, FAttachmentTransformRules::KeepWorldTransform);
+					LastHitStation->AddContextItem(HeldItems[0]->GetItemName());
 					HeldItems[0]->AttachedTo = LastHitStation;
 					HeldItems.RemoveAt(CurrentHeldItem);
 				}
