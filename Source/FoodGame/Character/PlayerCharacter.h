@@ -109,7 +109,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
 		AActor* InteractableLookingAt = nullptr;
 
-
 	bool bPlaceMode = false;
 
 	// Trace Data
@@ -129,7 +128,8 @@ protected:
 		TArray<AParentItem*> HeldItems;
 	int CurrentHeldItem = 0;
 
-	float CurrentWeight = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weight")
+		float CurrentWeight = 0.0f;
 	float MaxWeight = 3.0f;
 
 	// Actions

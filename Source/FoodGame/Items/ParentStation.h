@@ -7,6 +7,7 @@
 
 #include "Components/BoxComponent.h"
 #include "Engine/DataTable.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #include "ParentStation.generated.h"
 

@@ -222,7 +222,7 @@ void APlayerCharacter::PrimaryActionPress()
 			if (InteractableLookingAt->IsA(AParentItem::StaticClass())) {
 				// Cast to AParentItem and check the weight
 				AParentItem* newItem = Cast<AParentItem>(InteractableLookingAt);
-				if (CheckCanCollectItem(newItem->GetItemWeight())) {
+				if (CheckCanCollectItem(newItem->GetItemWeight()) == true) {
 					CollectItem(newItem);
 				}
 			}
@@ -295,16 +295,18 @@ void APlayerCharacter::SecondaryActionRelease()
 bool APlayerCharacter::CheckCanCollectItem(float NewItemWeight)
 {
 	if (CurrentWeight + NewItemWeight > MaxWeight) {
+		UE_LOG(LogTemp, Warning, TEXT("Cant Collect"));
 		return false;
 	}
 	else {
+		UE_LOG(LogTemp, Warning, TEXT("Can Collect"));
 		return true;
 	}
 }
 
 void APlayerCharacter::CollectItem(AParentItem* NewItem)
 {
-	// Check if the NewItem is attached to a station.  If it is, 'unattach' it in the slot
+	// Check if the NewItem is attached to another item.  If it is, 'unattach' it in the slot
 	if (NewItem->AttachedTo != nullptr) {
 		class AParentStation* attachedTo = Cast<AParentStation>(NewItem->AttachedTo);
 		attachedTo->RemoveContextItem();
@@ -315,6 +317,7 @@ void APlayerCharacter::CollectItem(AParentItem* NewItem)
 	NewItem->ToggleItemCollision(false);
 	NewItem->AttachToComponent(ItemPosition, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	HeldItems.Add(NewItem);
+	CurrentWeight = CurrentWeight + NewItem->GetItemWeight();
 }
 
 void APlayerCharacter::PlaceItem(int PlaceItemIndex)
@@ -331,41 +334,20 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 
 		bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
 		if (bTrace) {
-			if (TraceHit.Actor->IsA(AParentStation::StaticClass())) {
-				// If it is, cast to the station
-				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
-				HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-
-				// Check if the item is an accepted context item
-				if (LastHitStation->GetSlotContextItem(HeldItems[CurrentHeldItem]->GetItemName())) {
-					FTransform slotTransform = LastHitStation->GetSlotTransform();
-					HeldItems[0]->SetActorTransform(FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f)));
-					HeldItems[0]->AttachToActor(LastHitStation, FAttachmentTransformRules::KeepRelativeTransform);
-					LastHitStation->AddContextItem(HeldItems[0]->GetItemName());
-					HeldItems[0]->AttachedTo = LastHitStation;
-					HeldItems.RemoveAt(CurrentHeldItem);
-				}
-				// If it isn't, place it on the station
-				else {
-					HeldItems[0]->ToggleItemCollision(true);
-					HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-					HeldItems[0]->SetActorLocation(TraceHit.Location);
-					HeldItems.RemoveAt(CurrentHeldItem);
-				}
-			}
-			// Else, place it on the surface
-			else {
-				HeldItems[0]->ToggleItemCollision(true);
-				HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-				HeldItems[0]->SetActorLocation(TraceHit.Location);
-				HeldItems.RemoveAt(CurrentHeldItem);
-			}
+			// If it isn't, place it on the station
+			HeldItems[0]->ToggleItemCollision(true);
+			HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			HeldItems[0]->SetActorLocation(TraceHit.Location);
+			HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+			CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+			HeldItems.RemoveAt(CurrentHeldItem);
 		}
 		// Else, drop it in mid-air
 		else {
 			HeldItems[0]->ToggleItemCollision(true);
 			HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 			HeldItems[0]->SetActorLocation(TraceEnd);
+			CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
 			HeldItems.RemoveAt(CurrentHeldItem);
 		}
 		// Place item - TO:DO - Replace "0" with DropItemIndex when working
@@ -417,29 +399,8 @@ FTransform APlayerCharacter::PlaceTrace()
 
 	// If the trace hits something...
 	if (bTrace) {
-		// ...check if it is of class ParentStation
-		if (TraceHit.Actor->IsA(AParentStation::StaticClass())) {
-			// If it is, cast to the station if we haven't casted to it yet.
-			if (LastHitStation == nullptr) {
-				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
-			}
-			else if (TraceHit.Actor->GetName() != LastHitStation->GetName()) {
-				LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
-			}
-
-			// Check if the item is an accepted context item
-			if (LastHitStation->GetSlotContextItem(HeldItems[CurrentHeldItem]->GetItemName())) {
-				FTransform slotTransform = LastHitStation->GetSlotTransform();
-				return FTransform(slotTransform.GetRotation(), slotTransform.GetLocation() + LastHitStation->GetActorLocation(), FVector(1.0f, 1.0f, 1.0f));
-			}
-			else {
-				return FTransform(FRotator{}, TraceHit.Location, FVector(1.0f, 1.0f, 1.0f));
-			}
-		}
-		// If it hits something and it isn't an AParentStation, rteurn the hit location and make LastHitStation nullptr
-		else {
-			return FTransform(FRotator{}, TraceHit.Location, FVector(1.0f, 1.0f, 1.0f));
-		}
+		// If it hits something, rteturn the hit location and make LastHitStation nullptr
+		return FTransform(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f), TraceHit.Location, FVector(1.0f, 1.0f, 1.0f));
 	}
 	// Else, return the trace end
 	else {

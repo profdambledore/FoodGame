@@ -94,9 +94,6 @@ public:
 		FString Slot;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FTransform Transform;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TArray<FString> AcceptedItems;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

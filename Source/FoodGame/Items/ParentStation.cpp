@@ -40,21 +40,42 @@ void AParentStation::Tick(float DeltaTime)
 
 void AParentStation::OnCRBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	bool bAddItem = false;
+
 	if (OtherActor->IsA(AParentItem::StaticClass())) {
-		ItemsInCraftingRange.Add(Cast<AParentItem>(OtherActor));
-		FindRecipe();
+		AParentItem* collideItem = Cast<AParentItem>(OtherActor);
+		// Check if it is a context item.
+		for (int i = 0; i < ContextItemSlot.AcceptedItems.Num(); i++) {
+			if (collideItem->Data.ID == ContextItemSlot.AcceptedItems[i])
+			{
+				AddContextItem(collideItem->Data.ID);
+				bAddItem = true;
+				break;
+			}
+		}
+		// Else
+		if (bAddItem == false) {
+			ItemsInCraftingRange.Add(collideItem);
+			FindRecipe();
+		}
 	}
 }
 
 void AParentStation::OnCREndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
+	bool bRemContextItem = true;
 	if (OtherActor->IsA(AParentItem::StaticClass())) {
 		for (int i = 0; i < ItemsInCraftingRange.Num(); i++) {
 			if (ItemsInCraftingRange[i]->GetName() == OtherActor->GetName()) {
 				ItemsInCraftingRange.RemoveAt(i);
 				FindRecipe();
+				bRemContextItem = false;
+				break;
 			}
-		};
+		}
+		if (bRemContextItem) {
+			RemoveContextItem();
+		}
 	}
 }
 
@@ -66,11 +87,6 @@ bool AParentStation::GetSlotContextItem(FString ID)
 		}
 	}
 	return false;
-}
-
-FTransform AParentStation::GetSlotTransform()
-{
-	return ContextItemSlot.Transform;
 }
 
 void AParentStation::AddContextItem(FString ID)
@@ -147,11 +163,12 @@ void AParentStation::CraftRecipe()
 		newItems.RemoveAt(0);
 	}
 	
-	// For any remaining items in newItems, create a new item class
+	// For any remaining items in newItems, or any items requiring different classes, create a new item class
+	// TO:DO - Spawning other classes
 	for (int j = 0; j < newItems.Num(); j++) {
 		UE_LOG(LogTemp, Warning, TEXT("NewItem"));
 		FItemData* newData = Items->FindRow<FItemData>(FName(*newItems[0]), "", false);
-		AParentItem* nI = GetWorld()->SpawnActor<AParentItem>(newData->Class, CraftingRange->GetComponentLocation() + FVector(0.0f, 0.0f, 30.0f), FRotator{});
+		AParentItem* nI = GetWorld()->SpawnActor<AParentItem>(newData->Class, UKismetMathLibrary::RandomPointInBoundingBox(CraftingRange->GetComponentLocation(), CraftingRange->GetUnscaledBoxExtent()), FRotator{});
 		nI->SetupItem(*newData);
 	}
 
