@@ -156,16 +156,23 @@ void AParentStation::FindRecipe()
 void AParentStation::CraftRecipe()
 {
 	TArray<FString> newItems = CurrentRecipes.OutputItems;
+	int j = 0;
 
 	// Change any items currently in the range to the new items
 	for (int i = 0; i < ItemsInCraftingRange.Num(); i++) {
-		ItemsInCraftingRange[i]->SetupItem(*Items->FindRow<FItemData>(FName(*newItems[0]), "", false));
-		newItems.RemoveAt(0);
+		if (Items->FindRow<FItemData>(FName(*newItems[j]), "", false)->Class == ItemsInCraftingRange[i]->Data.Class){
+			ItemsInCraftingRange[i]->SetupItem(*Items->FindRow<FItemData>(FName(*newItems[j]), "", false));
+			newItems.RemoveAt(j);
+		}
+		else {
+			i--;
+			j++;
+		}
+
 	}
 	
 	// For any remaining items in newItems, or any items requiring different classes, create a new item class
-	// TO:DO - Spawning other classes
-	for (int j = 0; j < newItems.Num(); j++) {
+	for (j = 0; j < newItems.Num(); j++) {
 		UE_LOG(LogTemp, Warning, TEXT("NewItem"));
 		FItemData* newData = Items->FindRow<FItemData>(FName(*newItems[0]), "", false);
 		AParentItem* nI = GetWorld()->SpawnActor<AParentItem>(newData->Class, UKismetMathLibrary::RandomPointInBoundingBox(CraftingRange->GetComponentLocation(), CraftingRange->GetUnscaledBoxExtent()), FRotator{});
