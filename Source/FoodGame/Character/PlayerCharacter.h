@@ -21,6 +21,7 @@
 
 class AParentItem;
 class AParentStation;
+class APlate;
 
 UCLASS()
 class FOODGAME_API APlayerCharacter : public ACharacter

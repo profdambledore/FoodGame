@@ -11,6 +11,7 @@ AParentItem::AParentItem()
 	ItemMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Item Mesh"));
 	RootComponent = ItemMesh;
 	ItemMesh->SetSimulatePhysics(true);
+	ItemMesh->SetCollisionProfileName(TEXT("Item"));
 	//if (Data.Mesh != nullptr) { ItemMesh->SetStaticMesh(Data.Mesh); };
 
 }

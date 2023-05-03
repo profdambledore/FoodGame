@@ -1,5 +1,6 @@
 #include "Items/ParentItem.h"
 #include "Items/ParentStation.h"
+#include "Items/Plate.h"
 #include "Character/PlayerCharacter.h"
 
 // Sets default values
@@ -308,8 +309,7 @@ void APlayerCharacter::CollectItem(AParentItem* NewItem)
 {
 	// Check if the NewItem is attached to another item.  If it is, 'unattach' it in the slot
 	if (NewItem->AttachedTo != nullptr) {
-		class AParentStation* attachedTo = Cast<AParentStation>(NewItem->AttachedTo);
-		attachedTo->RemoveContextItem();
+		class AParentItem* attachedTo = Cast<AParentItem>(NewItem->AttachedTo);
 		NewItem->AttachedTo = nullptr;  attachedTo = nullptr;
 	}
 
@@ -334,13 +334,33 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 
 		bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
 		if (bTrace) {
-			// If it isn't, place it on the station
-			HeldItems[0]->ToggleItemCollision(true);
-			HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			HeldItems[0]->SetActorLocation(TraceHit.Location);
-			HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
-			CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
-			HeldItems.RemoveAt(CurrentHeldItem);
+			// If it hits a plate, place it on the plate and attach it to that plate
+			if (TraceHit.Actor->IsA(APlate::StaticClass())){
+				// Cast to the hit plate
+				APlate* HitPlate = Cast<APlate>(TraceHit.Actor);
+
+				// De-attach from the character
+				//HeldItems[0]->ToggleItemCollision(true);
+				//HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+				HeldItems[0]->SetActorLocation(TraceHit.Location);
+				HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+				CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+
+				// Attach to the plate
+				HitPlate->AttachedItems.Add(HeldItems[0]);
+				HeldItems[0]->AttachToActor(HitPlate, FAttachmentTransformRules::KeepWorldTransform);
+				HeldItems[0]->AttachedTo = HitPlate;
+				HeldItems.RemoveAt(CurrentHeldItem);
+			}
+			else {
+				// If it hits something, place it at the hit location
+				HeldItems[0]->ToggleItemCollision(true);
+				HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+				HeldItems[0]->SetActorLocation(TraceHit.Location);
+				HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+				CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+				HeldItems.RemoveAt(CurrentHeldItem);
+			}
 		}
 		// Else, drop it in mid-air
 		else {

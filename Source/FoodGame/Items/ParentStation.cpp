@@ -156,13 +156,15 @@ void AParentStation::FindRecipe()
 void AParentStation::CraftRecipe()
 {
 	TArray<FString> newItems = CurrentRecipes.OutputItems;
+	TArray<AParentItem*> iICR = ItemsInCraftingRange;
 	int j = 0;
 
 	// Change any items currently in the range to the new items
-	for (int i = 0; i < ItemsInCraftingRange.Num(); i++) {
-		if (Items->FindRow<FItemData>(FName(*newItems[j]), "", false)->Class == ItemsInCraftingRange[i]->Data.Class){
-			ItemsInCraftingRange[i]->SetupItem(*Items->FindRow<FItemData>(FName(*newItems[j]), "", false));
+	for (int i = 0; i < iICR.Num(); i++) {
+		if (Items->FindRow<FItemData>(FName(*newItems[j]), "", false)->Class == iICR[i]->Data.Class){
+			iICR[i]->SetupItem(*Items->FindRow<FItemData>(FName(*newItems[j]), "", false));
 			newItems.RemoveAt(j);
+			iICR.RemoveAt(j);
 		}
 		else {
 			i--;
@@ -177,6 +179,11 @@ void AParentStation::CraftRecipe()
 		FItemData* newData = Items->FindRow<FItemData>(FName(*newItems[0]), "", false);
 		AParentItem* nI = GetWorld()->SpawnActor<AParentItem>(newData->Class, UKismetMathLibrary::RandomPointInBoundingBox(CraftingRange->GetComponentLocation(), CraftingRange->GetUnscaledBoxExtent()), FRotator{});
 		nI->SetupItem(*newData);
+	}
+
+	// Destroy any items remaining
+	for (int i = 0; i < iICR.Num(); i++) {
+		iICR[i]->Destroy();
 	}
 
 }

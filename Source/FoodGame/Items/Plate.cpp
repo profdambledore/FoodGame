@@ -2,3 +2,7 @@
 
 #include "Items/Plate.h"
 
+void APlate::SetPlateDirty(bool bMakeDirty)
+{
+	bDirty = bMakeDirty;
+}
