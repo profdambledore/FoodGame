@@ -13,7 +13,7 @@ AParentStation::AParentStation()
 	CraftingRange->SetupAttachment(ItemMesh, "");
 
 	// Get Data Table object and store it
-	ConstructorHelpers::FObjectFinder<UDataTable>RecipeDTObject(TEXT("/Game/Data/DT_Recipes"));
+	ConstructorHelpers::FObjectFinder<UDataTable>RecipeDTObject(TEXT("/Game/Data/DT_ChoppingRecipes"));
 	if (RecipeDTObject.Succeeded()) { Recipes = RecipeDTObject.Object; }
 
 	// Get Data Table object and store it
@@ -117,31 +117,28 @@ void AParentStation::FindRecipe()
 	TArray<FString> iids;
 	TArray<FString> frid;
 
-	FRecipe* cr;
+	FRecipe_Chop* cr;
 
 	// Iterate through all the recipes
 	for (int j = 0; j < RecipeRows.Num(); j++) {
 		// If the recipe hasen't been found, continue looping
 		if (!bRecipeFound) {
-			cr = Recipes->FindRow<FRecipe>(RecipeRows[j], "", false);
-			// Check if the recipe matches the station type
-			if (cr->Station == StationType) {
-				// Check if this recipe has the same context item
-				if (cr->ContextItem == ContextItemSlot.ItemInSlot) {
-					// Check if the recipe has the same amount of items used in crafting
-					if (cr->InputItems.Num() == InputItemIDs.Num()) {
-						iids = InputItemIDs; frid = cr->InputItems;
-						for (int k = 0; k < iids.Num(); k++) {
-							if (frid.Contains(iids[k])) {
-								frid.RemoveAt(k);  iids.RemoveAt(k);
-							}
+			cr = Recipes->FindRow<FRecipe_Chop>(RecipeRows[j], "", false);
+			// Check if this recipe has the same context item
+			if (cr->ContextItem == ContextItemSlot.ItemInSlot) {
+				// Check if the recipe has the same amount of items used in crafting
+				if (cr->InputItems.Num() == InputItemIDs.Num()) {
+					iids = InputItemIDs; frid = cr->InputItems;
+					for (int k = 0; k < iids.Num(); k++) {
+						if (frid.Contains(iids[k])) {
+							frid.RemoveAt(k);  iids.RemoveAt(k);
 						}
-						if (iids.Num() == 0 && frid.Num() == 0)
-						{
-							// This is the item
-							bRecipeFound = true;
-							CurrentRecipes = *cr;
-						}
+					}
+					if (iids.Num() == 0 && frid.Num() == 0)
+					{
+						// This is the item
+						bRecipeFound = true;
+						CurrentRecipes = *cr;
 					}
 				}
 			}
@@ -185,5 +182,4 @@ void AParentStation::CraftRecipe()
 	for (int i = 0; i < iICR.Num(); i++) {
 		iICR[i]->Destroy();
 	}
-
 }

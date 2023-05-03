@@ -310,7 +310,8 @@ void APlayerCharacter::CollectItem(AParentItem* NewItem)
 	// Check if the NewItem is attached to another item.  If it is, 'unattach' it in the slot
 	if (NewItem->AttachedTo != nullptr) {
 		class AParentItem* attachedTo = Cast<AParentItem>(NewItem->AttachedTo);
-		NewItem->AttachedTo = nullptr;  attachedTo = nullptr;
+		attachedTo->AttachedItems.Remove(NewItem);
+		NewItem->AttachedTo = nullptr; 
 	}
 
 	// Add the new item to the array

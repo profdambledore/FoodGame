@@ -81,6 +81,9 @@ public:
 		float ItemWeight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		bool bBurnable;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TArray<FItemUsage> UsageRules;
 };
 
@@ -101,16 +104,13 @@ public:
 };
 
 USTRUCT(BlueprintType)
-struct FRecipe : public FTableRowBase
+struct FRecipe_Chop : public FTableRowBase
 {
 	GENERATED_USTRUCT_BODY();
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FString ID;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		TEnumAsByte<EStationType> Station;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FString ContextItem;
@@ -120,5 +120,23 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TArray<FString> OutputItems;
+};
 
+USTRUCT(BlueprintType)
+struct FRecipe_Cook : public FTableRowBase
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		FString ID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		FString InputItems;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		float CookTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		FString OutputItems;
 };

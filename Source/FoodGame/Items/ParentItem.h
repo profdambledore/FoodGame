@@ -49,4 +49,8 @@ public:
 		FItemData Data;
 
 	AActor* AttachedTo = nullptr;
+
+	// Array of all items attached to the plate
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Plate Data")
+		TArray<AParentItem*> AttachedItems;
 };

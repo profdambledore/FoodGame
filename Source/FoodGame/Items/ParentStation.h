@@ -24,7 +24,6 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	bool GetSlotContextItem(FString ID);
-	FTransform GetSlotTransform();
 	void AddContextItem(FString ID);
 	void RemoveContextItem();
 
@@ -50,10 +49,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 		UBoxComponent* CraftingRange;
 
-	// Data for station type
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-		TEnumAsByte<EStationType> StationType;
-
 	// Data for context item slot.  
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
 		FItemSlot ContextItemSlot;
@@ -72,7 +67,7 @@ public:
 
 	// Current Recipe
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Found Recipe")
-		FRecipe CurrentRecipes;
+		FRecipe_Chop CurrentRecipes;
 
 	
 };
