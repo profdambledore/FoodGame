@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#include "Equipment/ParentCooker.h"
 #include "Items/ParentItem.h"
 
 // Sets default values
@@ -12,8 +13,6 @@ AParentItem::AParentItem()
 	RootComponent = ItemMesh;
 	ItemMesh->SetSimulatePhysics(true);
 	ItemMesh->SetCollisionProfileName(TEXT("Item"));
-	//if (Data.Mesh != nullptr) { ItemMesh->SetStaticMesh(Data.Mesh); };
-
 }
 
 // Called when the game starts or when spawned
@@ -58,5 +57,40 @@ void AParentItem::ToggleItemCollision(bool bSetCollisionOn)
 		ItemMesh->SetSimulatePhysics(false);
 		ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	};
+}
+
+void AParentItem::StartCooking(AParentCooker* Cooker,  float CookingTime)
+{
+	// Set the AttachedActor to the cooker, but only if it's not attached to anything else
+	if (AttachedTo != nullptr && Data.bBurnable == true) {
+		AttachedCooker = Cooker;
+
+		// Check if the timer exists
+		if (GetWorld()->GetTimerManager().TimerExists(CookingTimerHandle)) {
+			// If it doesn't, create it
+			GetWorld()->GetTimerManager().SetTimer(CookingTimerHandle, FTimerDelegate::CreateUObject(this, &AParentItem::EndCooking), CookingTime, false, CookingTime);
+		}
+		else {
+			// If it does, resume it
+			GetWorld()->GetTimerManager().UnPauseTimer(CookingTimerHandle);
+		}
+	}
+}
+
+void AParentItem::StopCooking()
+{
+	if (AttachedCooker != nullptr) {
+		// Dereference the pointer
+		AttachedCooker = nullptr;
+
+		// Pause the timer
+		GetWorld()->GetTimerManager().PauseTimer(CookingTimerHandle);
+	}
+}
+
+void AParentItem::EndCooking()
+{
+	// Change the item to the recipe
+	AttachedCooker->OnCookingEnd(this);
 }
 

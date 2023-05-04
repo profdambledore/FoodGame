@@ -28,10 +28,10 @@ enum EActionState
 };
 
 UENUM()
-enum EStationType
+enum ECookerType
 {
-	ChoppingBoard UMETA(Display Name = "Chopping Board"),
-	Oven UMETA(Display Name = "Oven"),
+	Grill UMETA(Display Name = "Grill"),
+	PizzaOven UMETA(Display Name = "PizzaOven"),
 };
 
 UENUM()
@@ -130,6 +130,9 @@ struct FRecipe_Cook : public FTableRowBase
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FString ID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TEnumAsByte<ECookerType> CookerType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FString InputItems;

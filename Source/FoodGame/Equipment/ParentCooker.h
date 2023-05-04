@@ -7,6 +7,9 @@
 
 #include "Components/BoxComponent.h"
 #include "Engine/DataTable.h"
+#include "Materials/Material.h"
+
+#include "Items/ItemDataLibrary.h"
 
 #include "ParentCooker.generated.h"
 
@@ -22,6 +25,17 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION()
+		void OnCRBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void OnCREndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+		void OnCookingEnd(class AParentItem* Item);
+
+	FRecipe_Cook FindRecipe(FString ItemName);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -35,7 +49,7 @@ public:
 		UBoxComponent* CookingRange;
 
 	// Data
-		// Pointer to the recipe data table
+	// Pointer to the recipe data table
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data Table")
 		UDataTable* Recipes = nullptr;
 
@@ -43,4 +57,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data Table")
 		UDataTable* Items = nullptr;
 
+	// Pointer to Burnt Material
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data Table")
+		UMaterial* BurntMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Type")
+		TEnumAsByte<ECookerType> CookerType;
+
+	TArray<AParentItem*> ItemsInCookingRange;
 };

@@ -6,10 +6,13 @@
 #include "GameFramework/Actor.h"
 
 #include "Components/StaticMeshComponent.h"
+#include "TimerManager.h"
 
 #include "Items/ItemDataLibrary.h"
 
 #include "ParentItem.generated.h"
+
+class AParentCooker;
 
 UCLASS()
 class FOODGAME_API AParentItem : public AActor
@@ -35,6 +38,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void ToggleItemCollision(bool bSetCollisionOn);
 
+	// Called to begin the cooking proceess, or resume it
+	UFUNCTION(BlueprintCallable)
+		void StartCooking(AParentCooker* Cooker, float CookingTime);
+
+	// Called to pause the cooking process
+	UFUNCTION(BlueprintCallable)
+		void StopCooking();
+
+	// Called when the cooking process is finished
+	UFUNCTION(BlueprintCallable)
+		void EndCooking();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -53,4 +68,10 @@ public:
 	// Array of all items attached to the plate
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Plate Data")
 		TArray<AParentItem*> AttachedItems;
+
+	// Cooking 
+	FTimerHandle CookingTimerHandle;
+	class AParentCooker* AttachedCooker;
+	bool bStartedCooking;
+	bool bCannotCook;
 };
