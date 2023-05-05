@@ -64,5 +64,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Type")
 		TEnumAsByte<ECookerType> CookerType;
 
-	TArray<AParentItem*> ItemsInCookingRange;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+		TArray<AParentItem*> ItemsInCookingRange;
+
+	float DefaultCookTime = 5.0f;
 };

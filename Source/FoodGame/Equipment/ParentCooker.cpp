@@ -20,6 +20,10 @@ AParentCooker::AParentCooker()
 	ConstructorHelpers::FObjectFinder<UDataTable>ItemsDTObject(TEXT("/Game/Data/DT_ItemData"));
 	if (ItemsDTObject.Succeeded()) { Items = ItemsDTObject.Object; }
 
+	// Get material object and store it
+	ConstructorHelpers::FObjectFinder<UMaterial>MaterialObject(TEXT("/Game/Data/M_BurntItem"));
+	if (ItemsDTObject.Succeeded()) { BurntMaterial = MaterialObject.Object; }
+
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -29,7 +33,10 @@ AParentCooker::AParentCooker()
 void AParentCooker::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// Add Overlap Events
+	CookingRange->OnComponentBeginOverlap.AddDynamic(this, &AParentCooker::OnCRBeginOverlap);
+	CookingRange->OnComponentEndOverlap.AddDynamic(this, &AParentCooker::OnCREndOverlap);
 }
 
 // Called every frame
@@ -43,6 +50,7 @@ void AParentCooker::OnCRBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor
 {
 	if (OtherActor->IsA(AParentItem::StaticClass())) {
 		AParentItem* newItem = Cast<AParentItem>(OtherActor);
+		ItemsInCookingRange.Add(newItem);
 		newItem->StartCooking(this, FindRecipe(newItem->Data.ID).CookTime);
 	}
 }
@@ -52,6 +60,7 @@ void AParentCooker::OnCREndOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 	if (OtherActor->IsA(AParentItem::StaticClass())) {
 		for (int i = 0; i < ItemsInCookingRange.Num(); i++) {
 			if (ItemsInCookingRange[i]->GetName() == OtherActor->GetName()) {
+				UE_LOG(LogTemp, Warning, TEXT("59"));
 				ItemsInCookingRange[i]->StopCooking();
 				ItemsInCookingRange.RemoveAt(i);
 			}
@@ -99,6 +108,7 @@ FRecipe_Cook AParentCooker::FindRecipe(FString ItemName)
 		}
 	}
 
-	return FRecipe_Cook{};
+	FRecipe_Cook outRec;  outRec.CookTime = DefaultCookTime;
+	return outRec;
 }
 

@@ -62,11 +62,12 @@ void AParentItem::ToggleItemCollision(bool bSetCollisionOn)
 void AParentItem::StartCooking(AParentCooker* Cooker,  float CookingTime)
 {
 	// Set the AttachedActor to the cooker, but only if it's not attached to anything else
-	if (AttachedTo != nullptr && Data.bBurnable == true) {
+	if (AttachedTo == nullptr && Data.bBurnable == true) {
 		AttachedCooker = Cooker;
 
 		// Check if the timer exists
-		if (GetWorld()->GetTimerManager().TimerExists(CookingTimerHandle)) {
+		if (GetWorld()->GetTimerManager().TimerExists(CookingTimerHandle) == false) {
+			UE_LOG(LogTemp, Warning, TEXT("Started Cooking"));
 			// If it doesn't, create it
 			GetWorld()->GetTimerManager().SetTimer(CookingTimerHandle, FTimerDelegate::CreateUObject(this, &AParentItem::EndCooking), CookingTime, false, CookingTime);
 		}
@@ -79,6 +80,7 @@ void AParentItem::StartCooking(AParentCooker* Cooker,  float CookingTime)
 
 void AParentItem::StopCooking()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Stopped Cooking"));
 	if (AttachedCooker != nullptr) {
 		// Dereference the pointer
 		AttachedCooker = nullptr;
@@ -90,6 +92,7 @@ void AParentItem::StopCooking()
 
 void AParentItem::EndCooking()
 {
+	UE_LOG(LogTemp, Warning, TEXT("End Cooking"));
 	// Change the item to the recipe
 	AttachedCooker->OnCookingEnd(this);
 }

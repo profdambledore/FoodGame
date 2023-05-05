@@ -425,7 +425,6 @@ FTransform APlayerCharacter::PlaceTrace()
 	}
 	// Else, return the trace end
 	else {
-		UE_LOG(LogTemp, Warning, TEXT("End"));
 		return FTransform(FRotator{}, TraceEnd, FVector(1.0f, 1.0f, 1.0f));
 	}
 }
