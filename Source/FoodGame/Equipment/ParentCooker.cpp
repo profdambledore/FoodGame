@@ -70,6 +70,12 @@ void AParentCooker::OnCookingEnd(AParentItem* Item)
 	// Else, set the item to the one in the recipe
 	else {
 		Item->SetupItem(*Items->FindRow<FItemData>(FName(*foundRecipe.OutputItems), "", false));
+
+		// Check if the new item can be cooked.  If so, restart cooking
+		if (Item->Data.bBurnable == true) {
+			Item->GetWorld()->GetTimerManager().ClearTimer(Item->CookingTimerHandle);
+			Item->StartCooking(this, FindRecipe(Item->Data.ID).CookTime);
+		}
 	}
 }
 

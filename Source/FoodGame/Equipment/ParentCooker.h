@@ -42,7 +42,7 @@ protected:
 
 public:	
 	// Components
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 		UStaticMeshComponent* OvenMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
