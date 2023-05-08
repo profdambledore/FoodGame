@@ -13,6 +13,7 @@
 #include "Components/WidgetComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Materials/Material.h"
 #include "DrawDebugHelpers.h"
 
 #include "Items/ItemDataLibrary.h"
@@ -103,6 +104,10 @@ public:
 		UStaticMeshComponent* PlacingMesh;
 
 protected:
+	// Pointer to Hologram Material
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data Table")
+		UMaterial* PlacerMaterial = nullptr;
+
 	// Interact
 	float InteractRange = 170.0f;
 	TArray<AActor*> InteractablesInRange;

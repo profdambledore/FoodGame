@@ -40,6 +40,10 @@ APlayerCharacter::APlayerCharacter()
 	PlacingMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Placing Mesh"));
 	PlacingMesh->SetVisibility(false, false);
 
+	// Get material object and store it
+	ConstructorHelpers::FObjectFinder<UMaterial>MaterialObject(TEXT("/Game/Data/M_PlacerMaterial"));
+	if (MaterialObject.Succeeded()) { PlacerMaterial = MaterialObject.Object; }
+
 	// Set the active camera
 	ThirdPersonCamera->SetActive(false, false);
 	FirstPersonCamera->SetActive(true, true);
@@ -257,6 +261,7 @@ void APlayerCharacter::PrimaryActionTimer()
 		if (HeldItems.Num() != 0) {
 			PlacingMesh->SetVisibility(true, false);
 			PlacingMesh->SetStaticMesh(HeldItems[0]->ItemMesh->GetStaticMesh());
+			PlacingMesh->SetMaterial(0, PlacerMaterial);
 
 		}
 	}

@@ -22,7 +22,7 @@ AParentCooker::AParentCooker()
 
 	// Get material object and store it
 	ConstructorHelpers::FObjectFinder<UMaterial>MaterialObject(TEXT("/Game/Data/M_BurntItem"));
-	if (ItemsDTObject.Succeeded()) { BurntMaterial = MaterialObject.Object; }
+	if (MaterialObject.Succeeded()) { BurntMaterial = MaterialObject.Object; }
 
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
