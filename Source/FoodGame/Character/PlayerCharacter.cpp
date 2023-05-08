@@ -346,8 +346,6 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 				APlate* HitPlate = Cast<APlate>(TraceHit.Actor);
 
 				// De-attach from the character
-				//HeldItems[0]->ToggleItemCollision(true);
-				//HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 				HeldItems[0]->SetActorLocation(TraceHit.Location);
 				HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
 				CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
@@ -358,25 +356,50 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 				HeldItems[0]->AttachedTo = HitPlate;
 				HeldItems.RemoveAt(CurrentHeldItem);
 			}
+			else if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
+				// Cast to the item
+				AParentItem* HitItem = Cast<AParentItem>(TraceHit.Actor);
+
+				// Check if it has an attached actor,
+				if (HitItem->AttachedTo != nullptr) {
+					// If it is attached to something, check if it is another item
+					if (HitItem->AttachedTo->IsA(AParentItem::StaticClass())) {
+						// If it is, attach the held item to that item
+						HeldItems[0]->SetActorLocation(TraceHit.Location);
+						HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+						CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+
+						HitItem = Cast<AParentItem>(HitItem->AttachedTo);
+						HitItem->StackedItems.Add(HeldItems[0]);
+						HeldItems[0]->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
+						HeldItems[0]->AttachedTo = HitItem;
+						HeldItems.RemoveAt(CurrentHeldItem);
+					}
+				}
+				// Else, check if it is a stackable item
+				else if (HitItem->Data.bStackable) {
+					// If it is, attach the held item to that item
+					HeldItems[0]->SetActorLocation(TraceHit.Location);
+					HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+					CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+
+					HitItem->StackedItems.Add(HeldItems[0]);
+					HeldItems[0]->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
+					HeldItems[0]->AttachedTo = HitItem;
+					HeldItems.RemoveAt(CurrentHeldItem);
+				}
+				// Else, place it at the hit location
+				AttachAt(TraceHit.Location);
+			}
 			else {
 				// If it hits something, place it at the hit location
-				HeldItems[0]->ToggleItemCollision(true);
-				HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-				HeldItems[0]->SetActorLocation(TraceHit.Location);
-				HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
-				CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
-				HeldItems.RemoveAt(CurrentHeldItem);
+				AttachAt(TraceHit.Location);
 			}
 		}
 		// Else, drop it in mid-air
 		else {
-			HeldItems[0]->ToggleItemCollision(true);
-			HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-			HeldItems[0]->SetActorLocation(TraceEnd);
-			CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
-			HeldItems.RemoveAt(CurrentHeldItem);
+			AttachAt(TraceHit.Location);
 		}
-		// Place item - TO:DO - Replace "0" with DropItemIndex when working
 	}
 }
 
@@ -432,5 +455,16 @@ FTransform APlayerCharacter::PlaceTrace()
 	else {
 		return FTransform(FRotator{}, TraceEnd, FVector(1.0f, 1.0f, 1.0f));
 	}
+}
+
+void APlayerCharacter::AttachAt(FVector Location)
+{
+	// Place item - TO:DO - Replace "0" with DropItemIndex when working
+	HeldItems[0]->ToggleItemCollision(true);
+	HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	HeldItems[0]->SetActorLocation(Location);
+	HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+	CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+	HeldItems.RemoveAt(CurrentHeldItem);
 }
 

@@ -63,6 +63,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FItemData Data;
 
+	TSet<AParentItem*> StackedItems;
+
 	AActor* AttachedTo = nullptr;
 
 	// Array of all items attached to the plate

@@ -78,6 +78,7 @@ protected:
 	// Traces
 	void InteractTrace();
 	FTransform PlaceTrace();
+	void AttachAt(FVector Location);
 
 public:
 	// References

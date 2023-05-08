@@ -158,16 +158,18 @@ void AParentStation::CraftRecipe()
 
 	// Change any items currently in the range to the new items
 	for (int i = 0; i < iICR.Num(); i++) {
-		if (Items->FindRow<FItemData>(FName(*newItems[j]), "", false)->Class == iICR[i]->Data.Class){
-			iICR[i]->SetupItem(*Items->FindRow<FItemData>(FName(*newItems[j]), "", false));
-			newItems.RemoveAt(j);
-			iICR.RemoveAt(j);
+		if (j < newItems.Num()) {
+			if (Items->FindRow<FItemData>(FName(*newItems[j]), "", false)->Class == iICR[i]->Data.Class){
+				iICR[i]->SetupItem(*Items->FindRow<FItemData>(FName(*newItems[j]), "", false));
+				newItems.RemoveAt(j);
+				iICR.RemoveAt(i);
+			}
+			else {
+				i--;
+				j++;
+			}
 		}
-		else {
-			i--;
-			j++;
-		}
-
+		
 	}
 	
 	// For any remaining items in newItems, or any items requiring different classes, create a new item class
