@@ -84,6 +84,9 @@ public:
 		bool bBurnable;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		bool bStackable;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TArray<FItemUsage> UsageRules;
 };
 

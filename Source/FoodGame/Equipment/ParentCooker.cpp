@@ -71,7 +71,7 @@ void AParentCooker::OnCREndOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 void AParentCooker::OnCookingEnd(AParentItem* Item)
 {
 	// Find the recipe related with this item.  If one is not found, then burn the item
-	FRecipe_Cook foundRecipe = FindRecipe(Item->Data.Name);
+	FRecipe_Cook foundRecipe = FindRecipe(Item->Data.ID);
 	if (foundRecipe.ID == "") {
 		Item->ItemMesh->SetMaterial(0, BurntMaterial);
 		Item->bCannotCook = true;
@@ -97,12 +97,12 @@ FRecipe_Cook AParentCooker::FindRecipe(FString ItemName)
 
 	// Iterate through all the recipes
 	for (int j = 0; j < RecipeRows.Num(); j++) {
-		// If the recipe hasen't been found, continue looping
 		cr = Recipes->FindRow<FRecipe_Cook>(RecipeRows[j], "", false);
 		// Check if this recipe has the same cooking type
 		if (cr->CookerType == CookerType) {
 			// Check if the recipe has matching input items
 			if (cr->InputItems == ItemName) {
+				UE_LOG(LogTemp, Warning, TEXT("Recipe found"));
 				return *cr;
 			}
 		}
