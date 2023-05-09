@@ -169,7 +169,6 @@ void AParentStation::CraftRecipe()
 				j++;
 			}
 		}
-		
 	}
 	
 	// For any remaining items in newItems, or any items requiring different classes, create a new item class

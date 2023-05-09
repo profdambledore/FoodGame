@@ -38,6 +38,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void ToggleItemCollision(bool bSetCollisionOn);
 
+	UFUNCTION(BlueprintCallable)
+		void DetachStack(AParentItem* ItemToDetachFrom);
+
 	// Called to begin the cooking proceess, or resume it
 	UFUNCTION(BlueprintCallable)
 		void StartCooking(AParentCooker* Cooker, float CookingTime);
@@ -63,13 +66,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FItemData Data;
 
-	TSet<AParentItem*> StackedItems;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attachment Data")
+		TSet<AParentItem*> StackedItems;
 
 	AActor* AttachedTo = nullptr;
-
-	// Array of all items attached to the plate
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Plate Data")
-		TArray<AParentItem*> AttachedItems;
 
 	// Cooking 
 	FTimerHandle CookingTimerHandle;

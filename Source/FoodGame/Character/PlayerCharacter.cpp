@@ -312,11 +312,20 @@ bool APlayerCharacter::CheckCanCollectItem(float NewItemWeight)
 
 void APlayerCharacter::CollectItem(AParentItem* NewItem)
 {
-	// Check if the NewItem is attached to another item.  If it is, 'unattach' it in the slot
+	// Check if the NewItem is attached to another item.  
 	if (NewItem->AttachedTo != nullptr) {
-		class AParentItem* attachedTo = Cast<AParentItem>(NewItem->AttachedTo);
-		attachedTo->AttachedItems.Remove(NewItem);
-		NewItem->AttachedTo = nullptr; 
+		// Check if the attached item is a plate. If it is, 'unattach' it in the slot
+		if (TraceHit.Actor->IsA(APlate::StaticClass())) {
+			class APlate* attachedTo = Cast<APlate>(NewItem->AttachedTo);
+			attachedTo->AttachedItems.Remove(NewItem);
+			NewItem->AttachedTo = nullptr;
+		}
+		// Else, it must be in a stack.
+		else {
+			class AParentItem* attachedTo = Cast<AParentItem>(NewItem->AttachedTo);
+			attachedTo->DetachStack(NewItem);
+		}
+		
 	}
 
 	// Add the new item to the array
@@ -388,8 +397,10 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 					HeldItems[0]->AttachedTo = HitItem;
 					HeldItems.RemoveAt(CurrentHeldItem);
 				}
-				// Else, place it at the hit location
-				AttachAt(TraceHit.Location);
+				else {
+					// Else, place it at the hit location
+					AttachAt(TraceHit.Location);
+				}
 			}
 			else {
 				// If it hits something, place it at the hit location

@@ -59,6 +59,33 @@ void AParentItem::ToggleItemCollision(bool bSetCollisionOn)
 	};
 }
 
+void AParentItem::DetachStack(AParentItem* ItemToDetachFrom)
+{
+	// Go through the Set from the last index, detaching items
+	bool bMatchingItem = false;
+	TArray<AParentItem*> sIA = StackedItems.Array();
+
+	for (int i = StackedItems.Num() - 1; i > 0; i--) {
+		// Check if the items dont match and the item hasn't been found
+		if (sIA[i] == ItemToDetachFrom ) {
+			//  If the items are the same, then set bMatchingItem to true then remove it
+			bMatchingItem = true;
+			sIA[i]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			sIA[i]->ToggleItemCollision(true);
+			sIA[i]->AttachedTo = nullptr;
+			StackedItems.Remove(sIA[i]);
+		}
+		// Else, check if the item has been found already.  If it hasn't, remove this item
+		else if (!bMatchingItem)
+		{
+			sIA[i]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+			sIA[i]->ToggleItemCollision(true);
+			sIA[i]->AttachedTo = nullptr;
+			StackedItems.Remove(sIA[i]);
+		}
+	}
+}
+
 void AParentItem::StartCooking(AParentCooker* Cooker,  float CookingTime)
 {
 	// Set the AttachedActor to the cooker, but only if it's not attached to anything else

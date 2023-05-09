@@ -17,4 +17,7 @@ public:
 
 public:
 	bool bDirty = false;
+
+	// Array of all items attached to the plate
+	TArray<AParentItem*> AttachedItems;
 };
