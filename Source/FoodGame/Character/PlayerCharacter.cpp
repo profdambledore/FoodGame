@@ -365,12 +365,13 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 				HeldItems[0]->AttachedTo = HitPlate;
 				HeldItems.RemoveAt(CurrentHeldItem);
 			}
+			// If it hits an item...
 			else if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
 				// Cast to the item
 				AParentItem* HitItem = Cast<AParentItem>(TraceHit.Actor);
 
 				// Check if it has an attached actor,
-				if (HitItem->AttachedTo != nullptr) {
+				if (HitItem->AttachedTo != nullptr && HeldItems[0]->Data.bStackable) {
 					// If it is attached to something, check if it is another item
 					if (HitItem->AttachedTo->IsA(AParentItem::StaticClass())) {
 						// If it is, attach the held item to that item
@@ -385,8 +386,8 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 						HeldItems.RemoveAt(CurrentHeldItem);
 					}
 				}
-				// Else, check if it is a stackable item
-				else if (HitItem->Data.bStackable) {
+				// Else, check if both items are stackable items
+				else if (HitItem->Data.bStackable && HeldItems[0]->Data.bStackable) {
 					// If it is, attach the held item to that item
 					HeldItems[0]->SetActorLocation(TraceHit.Location);
 					HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
