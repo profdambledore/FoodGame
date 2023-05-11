@@ -1,6 +1,7 @@
 #include "Items/ParentItem.h"
 #include "Items/ParentStation.h"
 #include "Items/Plate.h"
+#include "Items/ParentContainer.h"
 #include "Character/PlayerCharacter.h"
 
 // Sets default values
@@ -288,6 +289,22 @@ void APlayerCharacter::SecondaryActionPress()
 			LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
 			if (LastHitStation->CurrentRecipes.ID != "") {
 				LastHitStation->CraftRecipe();
+			}
+		}
+		if (TraceHit.Actor->IsA(AParentContainer::StaticClass())) {
+			AParentContainer* HitContainer = Cast<AParentContainer>(TraceHit.Actor.Get());
+			// Check if the player is holding an item.  If they are, try to put the item in the container
+			if (HeldItems.Num() > 0) {
+				// Try to add the item to the container.  If we do, destroy the item
+				if (HitContainer->AddItemToContainer(HeldItems[0])) {
+					CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+					HeldItems[0]->Destroy();
+					HeldItems.RemoveAt(CurrentHeldItem);
+				}
+			}
+			// If they aren't, collect an item from the container
+			else {
+				//HitContainer->Remove
 			}
 		}
 	}
