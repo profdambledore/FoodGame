@@ -50,11 +50,11 @@ protected:
 	void MoveY(float AxisValue);
 	void CameraX(float AxisValue);
 	void CameraY(float AxisValue);
-	void ChangeItem(float AxisValue);
+	//void ChangeItem(float AxisValue);
 
 	// Action
 	void Interact();
-	void TogglePlaceMode();
+	//void TogglePlaceMode();
 
 	// Primary Action Functions
 	void PrimaryActionPress();
@@ -83,7 +83,7 @@ protected:
 	void CollectItem(AParentItem* NewItem);
 
 	// Called to place an item from the player's 'inventory' in the world
-	void PlaceItem(int PlaceItemIndex);
+	void PlaceItem();
 
 	// Trace Functions
 	// Trace function for interacting with objects
@@ -155,12 +155,12 @@ protected:
 	// Items
 	// Array of all items currently in the player's 'inventory'
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
-		TArray<AParentItem*> HeldItems;
+		AParentItem* HeldItem;
 
-	// The index of the current held item
-	int CurrentHeldItem = 0;
+	// The index of the current held item DEPRECATED
+	//int CurrentHeldItem = 0;
 
-	// The current weight of all items in the player's 'inventory'
+	// The current weight of all items in the player's 'inventory' DEPRECATED
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weight")
 		float CurrentWeight = 0.0f;
 

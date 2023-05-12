@@ -65,7 +65,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (InteractablesInRange.Num() != 0 && !bPlaceMode) {
+	if (InteractablesInRange.Num() != 0 && HeldItem == nullptr) {
 		InteractTrace();
 	}
 	// Place mode trace
@@ -92,7 +92,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("PrimaryAction", IE_Released, this, &APlayerCharacter::PrimaryActionRelease);
 	PlayerInputComponent->BindAction("SecondaryAction", IE_Pressed, this, &APlayerCharacter::SecondaryActionPress);
 	PlayerInputComponent->BindAction("SecondaryAction", IE_Released, this, &APlayerCharacter::SecondaryActionRelease);
-	PlayerInputComponent->BindAction("PlaceMode", IE_Pressed, this, &APlayerCharacter::TogglePlaceMode);
+	//PlayerInputComponent->BindAction("PlaceMode", IE_Pressed, this, &APlayerCharacter::TogglePlaceMode);
 }
 
 // --- Movement ---
@@ -128,37 +128,37 @@ void APlayerCharacter::CameraY(float AxisValue)
 	}
 }
 
-void APlayerCharacter::ChangeItem(float AxisValue)
-{
-	if (AxisValue == 1.0f) {
-		if (HeldItems.Num() == 0) {
-			// Do nothing
-		}
-		else if (HeldItems.Num() == 1) {
-			CurrentHeldItem = 0;
-		}
-		else if (CurrentHeldItem + 1 >= HeldItems.Num()) {
-			CurrentHeldItem = 0;
-		}
-		else {
-			CurrentHeldItem++;
-		}
-	}
-	else if (AxisValue == -1.0f) {
-		if (HeldItems.Num() == 0) {
-			// Do nothing
-		}
-		else if (HeldItems.Num() == 1) {
-			CurrentHeldItem = 0;
-		}
-		else if (CurrentHeldItem - 1 <= -1) {
-			CurrentHeldItem = 0;
-		}
-		else {
-			CurrentHeldItem--;
-		}
-	}
-}
+//void APlayerCharacter::ChangeItem(float AxisValue)
+//{
+//	if (AxisValue == 1.0f) {
+//		if (HeldItems.Num() == 0) {
+//			// Do nothing
+//		}
+//		else if (HeldItems.Num() == 1) {
+//			CurrentHeldItem = 0;
+//		}
+//		else if (CurrentHeldItem + 1 >= HeldItems.Num()) {
+//			CurrentHeldItem = 0;
+//		}
+//		else {
+//			CurrentHeldItem++;
+//		}
+//	}
+//	else if (AxisValue == -1.0f) {
+//		if (HeldItems.Num() == 0) {
+//			// Do nothing
+//		}
+//		else if (HeldItems.Num() == 1) {
+//			CurrentHeldItem = 0;
+//		}
+//		else if (CurrentHeldItem - 1 <= -1) {
+//			CurrentHeldItem = 0;
+//		}
+//		else {
+//			CurrentHeldItem--;
+//		}
+//	}
+//}
 
 // --- Camera ---
 void APlayerCharacter::SwitchCamera()
@@ -202,15 +202,15 @@ void APlayerCharacter::Interact()
 
 }
 
-void APlayerCharacter::TogglePlaceMode()
-{
-	bPlaceMode = !bPlaceMode;
-}
+//void APlayerCharacter::TogglePlaceMode()
+//{
+//	bPlaceMode = !bPlaceMode;
+//}
 
 // --- Actions ---
 void APlayerCharacter::PrimaryActionPress()
 {
-	if (bPlaceMode == true) {
+	if (HeldItem != nullptr) {
 		bPrimaryActionPressed = true;
 		if (PrimaryActionState == EActionState::Pressed) {
 			// Disable and set arm state to Disabled
@@ -238,11 +238,11 @@ void APlayerCharacter::PrimaryActionPress()
 
 void APlayerCharacter::PrimaryActionRelease()
 {
-	if (bPlaceMode == true) {
+	if (HeldItem != nullptr && PrimaryActionState != EActionState::Disabled) {
 		bPrimaryActionPressed = false;
 		PrimaryActionState = EActionState::Disabled;
 
-		PlaceItem(CurrentHeldItem);
+		PlaceItem();
 
 		// If hologram, end hologram
 		if (PlacingMesh->IsVisible()) {
@@ -259,9 +259,9 @@ void APlayerCharacter::PrimaryActionTimer()
 		PrimaryActionState = EActionState::Held;
 
 		// Begin hologram if an item is held
-		if (HeldItems.Num() != 0) {
+		if (HeldItem != nullptr) {
 			PlacingMesh->SetVisibility(true, false);
-			PlacingMesh->SetStaticMesh(HeldItems[0]->ItemMesh->GetStaticMesh());
+			PlacingMesh->SetStaticMesh(HeldItem->ItemMesh->GetStaticMesh());
 			PlacingMesh->SetMaterial(0, PlacerMaterial);
 
 		}
@@ -294,12 +294,11 @@ void APlayerCharacter::SecondaryActionPress()
 		if (TraceHit.Actor->IsA(AParentContainer::StaticClass())) {
 			AParentContainer* HitContainer = Cast<AParentContainer>(TraceHit.Actor.Get());
 			// Check if the player is holding an item.  If they are, try to put the item in the container
-			if (HeldItems.Num() > 0) {
+			if (HeldItem != nullptr) {
 				// Try to add the item to the container.  If we do, destroy the item
-				if (HitContainer->AddItemToContainer(HeldItems[0])) {
-					CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
-					HeldItems[0]->Destroy();
-					HeldItems.RemoveAt(CurrentHeldItem);
+				if (HitContainer->AddItemToContainer(HeldItem)) {
+					CurrentWeight = CurrentWeight - HeldItem->GetItemWeight();
+					HeldItem->Destroy();
 				}
 			}
 			// If they aren't, collect an item from the container
@@ -348,13 +347,13 @@ void APlayerCharacter::CollectItem(AParentItem* NewItem)
 	// Add the new item to the array
 	NewItem->ToggleItemCollision(false);
 	NewItem->AttachToComponent(ItemPosition, FAttachmentTransformRules::SnapToTargetIncludingScale);
-	HeldItems.Add(NewItem);
+	HeldItem = NewItem;
 	CurrentWeight = CurrentWeight + NewItem->GetItemWeight();
 }
 
-void APlayerCharacter::PlaceItem(int PlaceItemIndex)
+void APlayerCharacter::PlaceItem()
 {
-	if (HeldItems.Num() != 0) {
+	if (HeldItem != nullptr) {
 		TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
 		TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
 		TraceChannel = ECC_GameTraceChannel2;
@@ -372,15 +371,15 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 				APlate* HitPlate = Cast<APlate>(TraceHit.Actor);
 
 				// De-attach from the character
-				HeldItems[0]->SetActorLocation(TraceHit.Location);
-				HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
-				CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+				HeldItem->SetActorLocation(TraceHit.Location);
+				HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+				CurrentWeight = CurrentWeight - HeldItem->GetItemWeight();
 
 				// Attach to the plate
-				HitPlate->AttachedItems.Add(HeldItems[0]);
-				HeldItems[0]->AttachToActor(HitPlate, FAttachmentTransformRules::KeepWorldTransform);
-				HeldItems[0]->AttachedTo = HitPlate;
-				HeldItems.RemoveAt(CurrentHeldItem);
+				HitPlate->AttachedItems.Add(HeldItem);
+				HeldItem->AttachToActor(HitPlate, FAttachmentTransformRules::KeepWorldTransform);
+				HeldItem->AttachedTo = HitPlate;
+				HeldItem = nullptr;
 			}
 			// If it hits an item...
 			else if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
@@ -388,32 +387,32 @@ void APlayerCharacter::PlaceItem(int PlaceItemIndex)
 				AParentItem* HitItem = Cast<AParentItem>(TraceHit.Actor);
 
 				// Check if it has an attached actor,
-				if (HitItem->AttachedTo != nullptr && HeldItems[0]->Data.bStackable) {
+				if (HitItem->AttachedTo != nullptr && HeldItem->Data.bStackable) {
 					// If it is attached to something, check if it is another item
 					if (HitItem->AttachedTo->IsA(AParentItem::StaticClass())) {
 						// If it is, attach the held item to that item
-						HeldItems[0]->SetActorLocation(TraceHit.Location);
-						HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
-						CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+						HeldItem->SetActorLocation(TraceHit.Location);
+						HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+						CurrentWeight = CurrentWeight - HeldItem->GetItemWeight();
 
 						HitItem = Cast<AParentItem>(HitItem->AttachedTo);
-						HitItem->StackedItems.Add(HeldItems[0]);
-						HeldItems[0]->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
-						HeldItems[0]->AttachedTo = HitItem;
-						HeldItems.RemoveAt(CurrentHeldItem);
+						HitItem->StackedItems.Add(HeldItem);
+						HeldItem->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
+						HeldItem->AttachedTo = HitItem;
+						HeldItem = nullptr;
 					}
 				}
 				// Else, check if both items are stackable items
-				else if (HitItem->Data.bStackable && HeldItems[0]->Data.bStackable) {
+				else if (HitItem->Data.bStackable && HeldItem->Data.bStackable) {
 					// If it is, attach the held item to that item
-					HeldItems[0]->SetActorLocation(TraceHit.Location);
-					HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
-					CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
+					HeldItem->SetActorLocation(TraceHit.Location);
+					HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+					CurrentWeight = CurrentWeight - HeldItem->GetItemWeight();
 
-					HitItem->StackedItems.Add(HeldItems[0]);
-					HeldItems[0]->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
-					HeldItems[0]->AttachedTo = HitItem;
-					HeldItems.RemoveAt(CurrentHeldItem);
+					HitItem->StackedItems.Add(HeldItem);
+					HeldItem->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
+					HeldItem->AttachedTo = HitItem;
+					HeldItem = nullptr;
 				}
 				else {
 					// Else, place it at the hit location
@@ -489,11 +488,11 @@ FTransform APlayerCharacter::PlaceTrace()
 void APlayerCharacter::AttachAt(FVector Location)
 {
 	// Place item - TO:DO - Replace "0" with DropItemIndex when working
-	HeldItems[0]->ToggleItemCollision(true);
-	HeldItems[0]->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	HeldItems[0]->SetActorLocation(Location);
-	HeldItems[0]->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
-	CurrentWeight = CurrentWeight - HeldItems[0]->GetItemWeight();
-	HeldItems.RemoveAt(CurrentHeldItem);
+	HeldItem->ToggleItemCollision(true);
+	HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	HeldItem->SetActorLocation(Location);
+	HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+	CurrentWeight = CurrentWeight - HeldItem->GetItemWeight();
+	HeldItem = nullptr;
 }
 
