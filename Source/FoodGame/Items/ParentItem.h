@@ -30,9 +30,6 @@ public:
 		void SetupItem(FItemData NewItem);
 
 	UFUNCTION(BlueprintCallable)
-		float GetItemWeight();
-
-	UFUNCTION(BlueprintCallable)
 		FString GetItemName();
 
 	UFUNCTION(BlueprintCallable)

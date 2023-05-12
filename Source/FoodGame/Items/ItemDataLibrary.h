@@ -78,9 +78,6 @@ public:
 		UStaticMesh* Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		float ItemWeight;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		bool bBurnable;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

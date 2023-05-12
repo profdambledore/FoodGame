@@ -50,11 +50,9 @@ protected:
 	void MoveY(float AxisValue);
 	void CameraX(float AxisValue);
 	void CameraY(float AxisValue);
-	//void ChangeItem(float AxisValue);
 
 	// Action
 	void Interact();
-	//void TogglePlaceMode();
 
 	// Primary Action Functions
 	void PrimaryActionPress();
@@ -76,8 +74,8 @@ protected:
 		void OnIREndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	// Items Functions
-	// Called to check if the player can collect the item
-	bool CheckCanCollectItem(float NewItemWeight);
+	// Called to check if the player can collect the item DEPRECATED
+	//bool CheckCanCollectItem(float NewItemWeight);
 
 	// Called to collect the item and attach it to the player
 	void CollectItem(AParentItem* NewItem);
@@ -153,16 +151,13 @@ protected:
 	bool bInThirdPerson;
 
 	// Items
-	// Array of all items currently in the player's 'inventory'
+	// Pointer to item currently in the player's 'inventory'
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hands")
 		AParentItem* HeldItem;
 
-	// The index of the current held item DEPRECATED
-	//int CurrentHeldItem = 0;
-
 	// The current weight of all items in the player's 'inventory' DEPRECATED
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weight")
-		float CurrentWeight = 0.0f;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weight")
+		//float CurrentWeight = 0.0f;
 
 	// The maximum weight of items that the player can have in the their 'inventory'
 	float MaxWeight = 3.0f;

@@ -35,11 +35,6 @@ void AParentItem::SetupItem(FItemData NewItem)
 	ItemMesh->SetStaticMesh(NewItem.Mesh);
 }
 
-float AParentItem::GetItemWeight()
-{
-	return Data.ItemWeight;
-}
-
 FString AParentItem::GetItemName()
 {
 	return Data.ID;
