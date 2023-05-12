@@ -164,7 +164,7 @@ protected:
 
 	// Actions
 	// How long it is needed to hold an action button before it is treated as a hold rather than a press
-	float ActionPressTime = 0.5f;
+	float ActionPressTime = 0.2f;
 
 	// Primary Action
 	// The current state of the Primary Action (Disabled, Pressed or Held)

@@ -210,6 +210,8 @@ void APlayerCharacter::PrimaryActionRelease()
 		if (PlacingMesh->IsVisible()) {
 			PlacingMesh->SetVisibility(false, false);
 		}
+
+		GetWorld()->GetTimerManager().ClearTimer(PrimaryActionHandle);
 	}
 }
 

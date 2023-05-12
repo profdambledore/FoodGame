@@ -78,6 +78,9 @@ public:
 		UStaticMesh* Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		UTexture2D* Icon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		bool bBurnable;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
