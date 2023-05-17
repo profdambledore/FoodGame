@@ -31,14 +31,17 @@ void AParentContainer::OnCRBeginOverlap(UPrimitiveComponent* OverlappedComp, AAc
 
 bool AParentContainer::AddItemToContainer(AParentItem* ItemToAdd)
 {
-	// Check if the container has an item stored already.  If it doesn't check if the new item ID can be stored
-	if (ContainedItem.ID == "" || Amount == 0) {
-		if (AcceptedItems.Contains(ItemToAdd->Data.ID)) {
-			// If the ID can be stored, set it to be this containers item
-			SetupContainer(ItemToAdd->Data, 1);
-			return true;
+	// Check if the item can be stored
+	if (ItemToAdd->Data.bStoreable) {
+		// Check if the container has an item stored already.  If it doesn't check if the new item ID can be stored
+		if (ContainedItem.ID == "" || Amount == 0) {
+			if (AcceptedItems.Contains(ItemToAdd->Data.ID)) {
+				// If the ID can be stored, set it to be this containers item
+				SetupContainer(ItemToAdd->Data, 1);
+				return true;
+			}
 		}
-	}
+	}	
 	// Check if the item is the same ID as the item stored
 	else if (ItemToAdd->Data.ID == ContainedItem.ID) {
 		Amount++;
