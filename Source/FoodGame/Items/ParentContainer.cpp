@@ -5,16 +5,13 @@
 
 AParentContainer::AParentContainer()
 {
-	ContainerRange = CreateDefaultSubobject<UBoxComponent>(TEXT("Crafting Range"));
-	ContainerRange->SetupAttachment(ItemMesh, "");
+
 };
 
 // Called when the game starts or when spawned
 void AParentContainer::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//ContainerRange->OnComponentBeginOverlap.AddDynamic(this, &AParentContainer::OnCRBeginOverlap);
 
 }
 
@@ -24,24 +21,16 @@ void AParentContainer::SetupContainer(FItemData Item, int StartAmount)
 	Amount = StartAmount;
 }
 
-void AParentContainer::OnCRBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-
-}
-
 bool AParentContainer::AddItemToContainer(AParentItem* ItemToAdd)
 {
-	// Check if the item can be stored
-	if (ItemToAdd->Data.bStoreable) {
-		// Check if the container has an item stored already.  If it doesn't check if the new item ID can be stored
-		if (ContainedItem.ID == "" || Amount == 0) {
-			if (AcceptedItems.Contains(ItemToAdd->Data.ID)) {
-				// If the ID can be stored, set it to be this containers item
-				SetupContainer(ItemToAdd->Data, 1);
-				return true;
-			}
+	// Check if the container has an item stored already.  If it doesn't check if the new item ID can be stored
+	if (ContainedItem.ID == "" || Amount == 0) {
+		if (AcceptedItems.Contains(ItemToAdd->Data.ID)) {
+			// If the ID can be stored, set it to be this containers item
+			SetupContainer(ItemToAdd->Data, 1);
+			return true;
 		}
-	}	
+	}
 	// Check if the item is the same ID as the item stored
 	else if (ItemToAdd->Data.ID == ContainedItem.ID) {
 		Amount++;
@@ -57,6 +46,10 @@ bool AParentContainer::RemoveItemFromContainer(class APlayerCharacter* Character
 		AParentItem* nI = GetWorld()->SpawnActor<AParentItem>(FVector(), FRotator{});
 		nI->SetupItem(ContainedItem);
 		CharacterToGiveItem->CollectItem(nI);
+
+		// Remove one from the Amount.  If Amount now equals 0, clear ContainedItem struct;
+		Amount--;
+		if (Amount == 0) { ContainedItem = FItemData{}; }
 		return true;
 	}
 	return false;

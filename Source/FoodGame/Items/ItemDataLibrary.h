@@ -96,6 +96,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		bool bBinnable;
 
+	// Unneeded, Deprecate
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		bool bStoreable;
 };

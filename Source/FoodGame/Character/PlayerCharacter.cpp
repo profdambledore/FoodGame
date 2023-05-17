@@ -255,18 +255,20 @@ void APlayerCharacter::SecondaryActionPress()
 				LastHitStation->CraftRecipe();
 			}
 		}
-		if (TraceHit.Actor->IsA(AParentContainer::StaticClass())) {
+		else if (TraceHit.Actor->IsA(AParentContainer::StaticClass())) {
 			AParentContainer* HitContainer = Cast<AParentContainer>(TraceHit.Actor.Get());
 			// Check if the player is holding an item.  If they are, try to put the item in the container
 			if (HeldItem != nullptr) {
+				UE_LOG(LogTemp, Warning, TEXT("Interacted With Container"));
 				// Try to add the item to the container.  If we do, destroy the item
 				if (HitContainer->AddItemToContainer(HeldItem)) {
 					HeldItem->Destroy();
+					HeldItem = nullptr;
 				}
 			}
 			// If they aren't, collect an item from the container
 			else {
-				//HitContainer->Remove
+				HitContainer->RemoveItemFromContainer(this);
 			}
 		}
 	}
