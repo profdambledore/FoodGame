@@ -29,7 +29,7 @@ public:
 		void OnCRBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	bool AddItemToContainer(AParentItem* ItemToAdd);
-	bool RemoveItemFromContainer(class APlayerCharacter CharacterToGiveItem);
+	bool RemoveItemFromContainer(class APlayerCharacter* CharacterToGiveItem);
 
 protected:
 	// Called when the game starts or when spawned

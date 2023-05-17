@@ -29,14 +29,6 @@ void AParentContainer::OnCRBeginOverlap(UPrimitiveComponent* OverlappedComp, AAc
 
 }
 
-//bool AParentContainer::GetDoesItemMatch(FString InID)
-//{
-//	if (InID == ContainedItem.ID) {
-//		return true;
-//	}
-//	return false;
-//}
-
 bool AParentContainer::AddItemToContainer(AParentItem* ItemToAdd)
 {
 	// Check if the container has an item stored already.  If it doesn't check if the new item ID can be stored
@@ -55,11 +47,14 @@ bool AParentContainer::AddItemToContainer(AParentItem* ItemToAdd)
 	return false;
 }
 
-bool AParentContainer::RemoveItemFromContainer(class APlayerCharacter CharacterToGiveItem)
+bool AParentContainer::RemoveItemFromContainer(class APlayerCharacter* CharacterToGiveItem)
 {
 	if (Amount > 0) {
-		// Spawn
+		// Spawn the item in, setup its data and attach it to the player
+		AParentItem* nI = GetWorld()->SpawnActor<AParentItem>(FVector(), FRotator{});
+		nI->SetupItem(ContainedItem);
+		CharacterToGiveItem->CollectItem(nI);
+		return true;
 	}
-	if (true) { return true; };
 	return false;
 }

@@ -41,6 +41,9 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// Called to collect the item and attach it to the player
+	void CollectItem(AParentItem* NewItem);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -74,12 +77,6 @@ protected:
 		void OnIREndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	// Items Functions
-	// Called to check if the player can collect the item DEPRECATED
-	//bool CheckCanCollectItem(float NewItemWeight);
-
-	// Called to collect the item and attach it to the player
-	void CollectItem(AParentItem* NewItem);
-
 	// Called to place an item from the player's 'inventory' in the world
 	void PlaceItem();
 
