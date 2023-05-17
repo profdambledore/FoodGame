@@ -37,7 +37,11 @@ void AParentBin::OnBRBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* O
 {
 	// if AParentItem, destroy item
 	if (OtherActor->IsA(AParentItem::StaticClass())) {
-		OtherActor->Destroy();
+		AParentItem* ItemToBin = Cast<AParentItem>(OtherActor);
+		if (ItemToBin->Data.bBinnable)
+		{
+			OtherActor->Destroy();
+		}
 	}
 }
 

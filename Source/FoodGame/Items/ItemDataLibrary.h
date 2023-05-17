@@ -34,30 +34,37 @@ enum ECookerType
 	PizzaOven UMETA(Display Name = "PizzaOven"),
 };
 
-UENUM()
-enum EUsageRule
+//UENUM() // Deprecate
+//enum EUsageRule
+//{
+	//Pickup UMETA(Display Name = "Pickup"),
+	//Chop UMETA(Display Name = "Chop"),
+//};
+
+UENUM() 
+enum EConditionState
 {
-	Pickup UMETA(Display Name = "Pickup"),
-	Chop UMETA(Display Name = "Chop"),
+	Clean UMETA(Display Name = "Clean"),
+	Dirty UMETA(Display Name = "Dirty"),
+	Wet UMETA(Display Name = "Wet"),
 };
 
-USTRUCT(BlueprintType)
-struct FItemUsage
-{
-	GENERATED_USTRUCT_BODY();
+////struct FItemUsage
+//{
+//	GENERATED_USTRUCT_BODY();
 
-public:
+//public:
 	// The input name (MoveX, CameraY, Interact)
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		FString Input;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//	FString Input;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		TEnumAsByte<EUsageRule> Rule;
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//	TEnumAsByte<EUsageRule> Rule;
 
 	// The name of the action (Chop, Pick up)
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		FString Action;
-};
+//	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//	FString Action;
+//};
 
 USTRUCT(BlueprintType)
 struct FItemData : public FTableRowBase
@@ -87,7 +94,10 @@ public:
 		bool bStackable;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		TArray<FItemUsage> UsageRules;
+		bool bBinnable;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		bool bStoreable;
 };
 
 USTRUCT(BlueprintType)

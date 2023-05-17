@@ -12,12 +12,15 @@ class FOODGAME_API APlate : public AParentItem
 	GENERATED_BODY()
 	
 public:
-	UFUNCTION()
-		void SetPlateDirty(bool bMakeDirty);
+	//UFUNCTION()
+		//void SetPlateDirty(bool bMakeDirty);
 
 public:
-	bool bDirty = false;
+	//bool bDirty = false;
 
 	// Array of all items attached to the plate
 	TArray<AParentItem*> AttachedItems;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TEnumAsByte<EConditionState> Condition;
 };
