@@ -2,6 +2,7 @@
 #include "Items/ParentStation.h"
 #include "Items/Plate.h"
 #include "Items/ParentContainer.h"
+#include "Equipment/ParentSink.h"
 #include "Character/PlayerCharacter.h"
 
 // Sets default values
@@ -66,11 +67,11 @@ void APlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (InteractablesInRange.Num() != 0 && HeldItem == nullptr) {
-		InteractTrace();
+		TraceForItems();
 	}
 	// Place mode trace
 	else if (PlacingMesh->IsVisible()) {
-		PlacingMesh->SetWorldTransform(PlaceTrace());
+		PlacingMesh->SetWorldTransform(TraceForHologram());
 	}
 }
 
@@ -157,7 +158,7 @@ void APlayerCharacter::OnIRBeginOverlap(UPrimitiveComponent* OverlappedComp, AAc
 
 void APlayerCharacter::OnIREndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	// Find the actor in the array and remover it
+	// Find the actor in the array and remove it
 	if (OtherActor->IsA(AParentItem::StaticClass())) {
 		InteractablesInRange.Remove(OtherActor);
 		if (InteractablesInRange.Num() == 0) { InteractableLookingAt = nullptr; }
@@ -176,12 +177,7 @@ void APlayerCharacter::PrimaryActionPress()
 
 	if (HeldItem != nullptr) {
 		bPrimaryActionPressed = true;
-		//if (PrimaryActionState == EActionState::Pressed) {
-			// Disable and set arm state to Disabled
-			//PrimaryActionState = EActionState::Disabled;
-		//}
-		if (PrimaryActionState != EActionState::Pressed) {
-			
+		if (PrimaryActionState != EActionState::Pressed) {	
 			GetWorld()->GetTimerManager().SetTimer(PrimaryActionHandle, FTimerDelegate::CreateUObject(this, &APlayerCharacter::PrimaryActionTimer), ActionPressTime, false, ActionPressTime);
 		}
 	}
@@ -227,7 +223,6 @@ void APlayerCharacter::PrimaryActionTimer()
 			PlacingMesh->SetVisibility(true, false);
 			PlacingMesh->SetStaticMesh(HeldItem->ItemMesh->GetStaticMesh());
 			PlacingMesh->SetMaterial(0, PlacerMaterial);
-
 		}
 	}
 	else {
@@ -238,28 +233,33 @@ void APlayerCharacter::PrimaryActionTimer()
 
 void APlayerCharacter::SecondaryActionPress()
 {
+	// Tracing for any item actions
+	// Such as - chopping, cleaning a plate in a sink, getting/placing an item in a container
 	TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
 	TraceEnd = (TraceStart + (FirstPersonCamera->GetForwardVector() * InteractRange));
 	TraceChannel = ECC_GameTraceChannel2;
 	FVector placeLoc;
 
-	FCollisionQueryParams TraceParams(FName(TEXT("Drop Trace")), true, NULL);
+	FCollisionQueryParams TraceParams(FName(TEXT("Action Trace")), true, NULL);
 	TraceParams.bTraceComplex = true;
 	TraceParams.bReturnPhysicalMaterial = true;
 
 	bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
 	if (bTrace) {
-		if (TraceHit.Actor->IsA(AParentStation::StaticClass())) {
-			LastHitStation = Cast<AParentStation>(TraceHit.Actor.Get());
-			if (LastHitStation->CurrentRecipes.ID != "") {
-				LastHitStation->CraftRecipe();
+		switch (GetTraceHitClass(TraceHit.Actor.Get())) {
+		case HitChopping:
+		{
+			AParentStation* HitStation = Cast<AParentStation>(TraceHit.Actor.Get());
+			if (HitStation->CurrentRecipes.ID != "") {
+				HitStation->CraftRecipe();
 			}
+			break;
 		}
-		else if (TraceHit.Actor->IsA(AParentContainer::StaticClass())) {
+		case HitContainer:
+		{
 			AParentContainer* HitContainer = Cast<AParentContainer>(TraceHit.Actor.Get());
 			// Check if the player is holding an item.  If they are, try to put the item in the container
 			if (HeldItem != nullptr) {
-				UE_LOG(LogTemp, Warning, TEXT("Interacted With Container"));
 				// Try to add the item to the container.  If we do, destroy the item
 				if (HitContainer->AddItemToContainer(HeldItem)) {
 					HeldItem->Destroy();
@@ -270,6 +270,21 @@ void APlayerCharacter::SecondaryActionPress()
 			else {
 				HitContainer->RemoveItemFromContainer(this);
 			}
+			break;
+		}
+		case HitSink:
+		{
+			// If we hit a sink, wash the topmost dirty plate in the set, if there is one in the sink
+			AParentSink* HitSink = Cast<AParentSink>(TraceHit.Actor.Get());
+			if (HitSink->PlatesInSink.Num() != 0) {
+				HitSink->CleanPlate();
+			}
+			break;
+		}
+		default:
+		{
+			break;
+		}
 		}
 	}
 }
@@ -279,12 +294,11 @@ void APlayerCharacter::SecondaryActionRelease()
 }
 
 // --- Items --- 
-
 void APlayerCharacter::CollectItem(AParentItem* NewItem)
 {
 	// Check if the NewItem is attached to another item.  
 	if (NewItem->AttachedTo != nullptr) {
-		// Check if the attached item is a plate. If it is, 'unattach' it in the slot
+		// Check if the attached item is a plate. If it is, 'unattach' it in the plate's slot
 		if (TraceHit.Actor->IsA(APlate::StaticClass())) {
 			class APlate* attachedTo = Cast<APlate>(NewItem->AttachedTo);
 			attachedTo->AttachedItems.Remove(NewItem);
@@ -298,7 +312,7 @@ void APlayerCharacter::CollectItem(AParentItem* NewItem)
 		
 	}
 
-	// Add the new item to the array
+	// Set the new item as the HeldItem pointer
 	NewItem->ToggleItemCollision(false);
 	NewItem->AttachToComponent(ItemPosition, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	HeldItem = NewItem;
@@ -318,8 +332,49 @@ void APlayerCharacter::PlaceItem()
 
 		bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
 		if (bTrace) {
-			// If it hits a plate, place it on the plate and attach it to that plate
-			if (TraceHit.Actor->IsA(APlate::StaticClass())){
+			switch (GetTraceHitClass(TraceHit.Actor.Get())) {
+			case HitItem:
+			{
+				// Cast to the item
+				AParentItem* HitItem = Cast<AParentItem>(TraceHit.Actor);
+
+				// Check if it has an attached actor,
+				if (HitItem->AttachedTo != nullptr && HeldItem->Data.bStackable) {
+					// If it is attached to something, check if it is another item
+					if (HitItem->AttachedTo->IsA(AParentItem::StaticClass())) {
+						// If it is, attach the held item to that item
+						HeldItem->SetActorLocation(TraceHit.Location);
+						HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+
+						HitItem = Cast<AParentItem>(HitItem->AttachedTo);
+						HitItem->StackedItems.Add(HeldItem);
+						HeldItem->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
+						HeldItem->AttachedTo = HitItem;
+						HeldItem = nullptr;
+					}
+				}
+
+				// Else, check if both items are stackable items
+				else if (HitItem->Data.bStackable && HeldItem->Data.bStackable) {
+					// If it is, attach the held item to that item
+					HeldItem->SetActorLocation(TraceHit.Location);
+					HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
+
+					HitItem->StackedItems.Add(HeldItem);
+					HeldItem->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
+					HeldItem->AttachedTo = HitItem;
+					HeldItem = nullptr;
+				}
+
+				// Else, place it at the hit location
+				else {
+					PlaceAt(TraceHit.Location);
+				}
+				break;
+			}
+			case HitPlate:
+			{
+				// If it hits a plate, place it on the plate and attach it to that plate
 				// Cast to the hit plate
 				APlate* HitPlate = Cast<APlate>(TraceHit.Actor);
 
@@ -332,57 +387,23 @@ void APlayerCharacter::PlaceItem()
 				HeldItem->AttachToActor(HitPlate, FAttachmentTransformRules::KeepWorldTransform);
 				HeldItem->AttachedTo = HitPlate;
 				HeldItem = nullptr;
+				break;
 			}
-			// If it hits an item...
-			else if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
-				// Cast to the item
-				AParentItem* HitItem = Cast<AParentItem>(TraceHit.Actor);
-
-				// Check if it has an attached actor,
-				if (HitItem->AttachedTo != nullptr && HeldItem->Data.bStackable) {
-					// If it is attached to something, check if it is another item
-					if (HitItem->AttachedTo->IsA(AParentItem::StaticClass())) {
-						// If it is, attach the held item to that item
-						HeldItem->SetActorLocation(TraceHit.Location);
-						HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
-						
-						HitItem = Cast<AParentItem>(HitItem->AttachedTo);
-						HitItem->StackedItems.Add(HeldItem);
-						HeldItem->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
-						HeldItem->AttachedTo = HitItem;
-						HeldItem = nullptr;
-					}
-				}
-				// Else, check if both items are stackable items
-				else if (HitItem->Data.bStackable && HeldItem->Data.bStackable) {
-					// If it is, attach the held item to that item
-					HeldItem->SetActorLocation(TraceHit.Location);
-					HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
-				
-					HitItem->StackedItems.Add(HeldItem);
-					HeldItem->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
-					HeldItem->AttachedTo = HitItem;
-					HeldItem = nullptr;
-				}
-				else {
-					// Else, place it at the hit location
-					AttachAt(TraceHit.Location);
-				}
-			}
-			else {
+			default:
 				// If it hits something, place it at the hit location
-				AttachAt(TraceHit.Location);
+				PlaceAt(TraceHit.Location);
+				break;
 			}
 		}
 		// Else, drop it in mid-air
 		else {
-			AttachAt(TraceEnd);
+			PlaceAt(TraceEnd);
 		}
 	}
 }
 
 // --- Tracing ---
-void APlayerCharacter::InteractTrace()
+void APlayerCharacter::TraceForItems()
 {
 	// Trace interactables infront of the player
 	// Generate information for the trace
@@ -399,10 +420,14 @@ void APlayerCharacter::InteractTrace()
 
 	// If the trace hits something...
 	if (bTrace) {
-		// ... check to see if it is of class AParentItem
-		if (TraceHit.Actor->IsA(AParentItem::StaticClass())) {
+		switch (GetTraceHitClass(TraceHit.Actor.Get())) {
+		case HitItem:
 			// If it is, set InteractableLookingAt
 			InteractableLookingAt = TraceHit.Actor.Get();
+			break;
+
+		default:
+			break;
 		}
 	}
 	// Else, set InteractableLookingAt to nullptr
@@ -411,7 +436,7 @@ void APlayerCharacter::InteractTrace()
 	}
 }
 
-FTransform APlayerCharacter::PlaceTrace()
+FTransform APlayerCharacter::TraceForHologram()
 {
 	// Trace to see where to place the hologram
 	TraceStart = FirstPersonCamera->GetComponentLocation() + (FirstPersonCamera->GetForwardVector() * 50);
@@ -435,13 +460,23 @@ FTransform APlayerCharacter::PlaceTrace()
 	}
 }
 
-void APlayerCharacter::AttachAt(FVector Location)
+void APlayerCharacter::PlaceAt(FVector Location)
 {
-	// Place item - TO:DO - Replace "0" with DropItemIndex when working
 	HeldItem->ToggleItemCollision(true);
 	HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 	HeldItem->SetActorLocation(Location);
 	HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
 	HeldItem = nullptr;
+}
+
+ETraceQuery APlayerCharacter::GetTraceHitClass(AActor* TraceOutput)
+{
+	// Query what a trace hit, returning an enum
+	if (TraceHit.Actor->IsA(AParentItem::StaticClass())) { return ETraceQuery::HitItem; }
+	else if (TraceHit.Actor->IsA(AParentStation::StaticClass())) { return ETraceQuery::HitChopping; }
+	else if (TraceHit.Actor->IsA(APlate::StaticClass())) { return ETraceQuery::HitPlate; }
+	else if (TraceHit.Actor->IsA(AParentContainer::StaticClass())) { return ETraceQuery::HitContainer; }
+	else if (TraceHit.Actor->IsA(AParentSink::StaticClass())) { return ETraceQuery::HitSink; }
+	return ETraceQuery::HitActor;
 }
 

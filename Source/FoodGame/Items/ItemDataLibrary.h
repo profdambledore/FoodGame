@@ -34,13 +34,6 @@ enum ECookerType
 	PizzaOven UMETA(Display Name = "PizzaOven"),
 };
 
-//UENUM() // Deprecate
-//enum EUsageRule
-//{
-	//Pickup UMETA(Display Name = "Pickup"),
-	//Chop UMETA(Display Name = "Chop"),
-//};
-
 UENUM() 
 enum EConditionState
 {
@@ -49,22 +42,17 @@ enum EConditionState
 	Wet UMETA(Display Name = "Wet"),
 };
 
-////struct FItemUsage
-//{
-//	GENERATED_USTRUCT_BODY();
+UENUM()
+enum ETraceQuery
+{
+	HitActor UMETA(Display Name = "Hit Actor"),
+	HitItem UMETA(Display Name = "Hit Item"),
+	HitChopping UMETA(Display Name = "Hit Chopping Board"),
+	HitPlate UMETA(Display Name = "Hit Plate"),
+	HitContainer UMETA(Display Name = "Hit Container"),
+	HitSink UMETA(Display Name = "Hit Sink"),
+};
 
-//public:
-	// The input name (MoveX, CameraY, Interact)
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//	FString Input;
-
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//	TEnumAsByte<EUsageRule> Rule;
-
-	// The name of the action (Chop, Pick up)
-//	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	//	FString Action;
-//};
 
 USTRUCT(BlueprintType)
 struct FItemData : public FTableRowBase

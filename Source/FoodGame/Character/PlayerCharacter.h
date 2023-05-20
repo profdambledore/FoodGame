@@ -25,6 +25,7 @@ class AParentItem;
 class AParentStation;
 class APlate;
 class AParentContainer;
+class AParentSink;
 
 UCLASS()
 class FOODGAME_API APlayerCharacter : public ACharacter
@@ -81,14 +82,16 @@ protected:
 	void PlaceItem();
 
 	// Trace Functions
-	// Trace function for interacting with objects
-	void InteractTrace();
+	// Trace function for items
+	void TraceForItems();
 
 	// Trace function used to guide the PlacerMesh to a location in the world
-	FTransform PlaceTrace();
+	FTransform TraceForHologram();
 
 	// Called to place an item in the world (a default if no items/stations/ect are hit)
-	void AttachAt(FVector Location);
+	void PlaceAt(FVector Location);
+
+	ETraceQuery GetTraceHitClass(AActor* TraceOutput);
 
 public:
 	// References
@@ -139,9 +142,6 @@ protected:
 	FVector TraceEnd;
 	ECollisionChannel TraceChannel;
 	bool bTrace;
-
-	// Pointer to last hit station (TO:DO - Replace with a global pointer between all items, not just station)
-	class AParentStation* LastHitStation = nullptr;
 
 	// Camera
 	// Bool to designate if the player is in first or third person
