@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+
+#include "Components/BoxComponent.h"
+
 #include "ParentSink.generated.h"
 
 UCLASS()
@@ -18,14 +21,14 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to add an item to the sink
-	bool GetCanAddPlate();
-
-	// Called to add an item to the sink
-	void RemovePlateFromSink(class APlayerCharacter* PlayerToAttachTo);
-
 	// Called to update the status of the plate in the top set index to Clean
 	void CleanPlate();
+
+	UFUNCTION()
+		void OnSRBeginOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void OnSREndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 protected:
 	// Called when the game starts or when spawned
@@ -36,11 +39,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 		UStaticMeshComponent* SinkMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+		UBoxComponent* SinkRange;
+
 	// Set of all plates in the sink
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TSet<class APlate*> PlatesInSink;
+		TArray<class APlate*> PlatesInSink;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int MaxPlatesInSink = 2;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		//int MaxPlatesInSink = 2;
 
 };

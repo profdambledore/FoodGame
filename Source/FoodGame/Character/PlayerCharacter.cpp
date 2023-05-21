@@ -421,12 +421,14 @@ void APlayerCharacter::TraceForItems()
 	// If the trace hits something...
 	if (bTrace) {
 		switch (GetTraceHitClass(TraceHit.Actor.Get())) {
-		case HitItem:
-			// If it is, set InteractableLookingAt
-			InteractableLookingAt = TraceHit.Actor.Get();
+		case HitSink:
+		{
 			break;
+		}
 
 		default:
+			// If it is, set InteractableLookingAt
+			InteractableLookingAt = TraceHit.Actor.Get();
 			break;
 		}
 	}
@@ -472,11 +474,11 @@ void APlayerCharacter::PlaceAt(FVector Location)
 ETraceQuery APlayerCharacter::GetTraceHitClass(AActor* TraceOutput)
 {
 	// Query what a trace hit, returning an enum
-	if (TraceHit.Actor->IsA(AParentItem::StaticClass())) { return ETraceQuery::HitItem; }
-	else if (TraceHit.Actor->IsA(AParentStation::StaticClass())) { return ETraceQuery::HitChopping; }
+	if (TraceHit.Actor->IsA(AParentStation::StaticClass())) { return ETraceQuery::HitChopping; }
 	else if (TraceHit.Actor->IsA(APlate::StaticClass())) { return ETraceQuery::HitPlate; }
-	else if (TraceHit.Actor->IsA(AParentContainer::StaticClass())) { return ETraceQuery::HitContainer; }
+	else if (TraceHit.Actor->IsA(AParentContainer::StaticClass())) {return ETraceQuery::HitContainer; }
 	else if (TraceHit.Actor->IsA(AParentSink::StaticClass())) { return ETraceQuery::HitSink; }
+	else if (TraceHit.Actor->IsA(AParentItem::StaticClass())) { return ETraceQuery::HitItem; }
 	return ETraceQuery::HitActor;
 }
 

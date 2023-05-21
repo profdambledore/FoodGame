@@ -59,7 +59,6 @@ void AParentCooker::OnCREndOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 	if (OtherActor->IsA(AParentItem::StaticClass())) {
 		for (int i = 0; i < ItemsInCookingRange.Num(); i++) {
 			if (ItemsInCookingRange[i]->GetName() == OtherActor->GetName()) {
-				UE_LOG(LogTemp, Warning, TEXT("59"));
 				ItemsInCookingRange[i]->StopCooking();
 				ItemsInCookingRange.RemoveAt(i);
 			}
