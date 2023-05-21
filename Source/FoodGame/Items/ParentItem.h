@@ -38,6 +38,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void DetachStack(AParentItem* ItemToDetachFrom);
 
+	UFUNCTION(BlueprintImplementableEvent)
+		void SetContextData(FItemData Icon);
+
 	// Called to begin the cooking proceess, or resume it
 	UFUNCTION(BlueprintCallable)
 		void StartCooking(AParentCooker* Cooker, float CookingTime);

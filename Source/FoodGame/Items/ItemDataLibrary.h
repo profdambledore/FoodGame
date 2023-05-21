@@ -8,6 +8,7 @@
 #include "Engine/DataTable.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/Texture2D.h"
+#include "Materials/Material.h"
 #include "Components/SceneComponent.h"
 
 #include "ItemDataLibrary.generated.h"
@@ -74,6 +75,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		UTexture2D* Icon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		UMaterial* Material;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		bool bBurnable;

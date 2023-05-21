@@ -12,13 +12,14 @@ AParentContainer::AParentContainer()
 void AParentContainer::BeginPlay()
 {
 	Super::BeginPlay();
-
+	SetContextData(ContainedItem);
 }
 
 void AParentContainer::SetupContainer(FItemData Item, int StartAmount)
 {
 	ContainedItem = Item;
 	Amount = StartAmount;
+	SetContextData(ContainedItem);
 }
 
 bool AParentContainer::AddItemToContainer(AParentItem* ItemToAdd)
@@ -49,7 +50,10 @@ bool AParentContainer::RemoveItemFromContainer(class APlayerCharacter* Character
 
 		// Remove one from the Amount.  If Amount now equals 0, clear ContainedItem struct;
 		Amount--;
-		if (Amount == 0) { ContainedItem = FItemData{}; }
+		if (Amount == 0) { 
+			ContainedItem = FItemData{}; 
+			SetContextData(ContainedItem);
+		}
 		return true;
 	}
 	return false;
