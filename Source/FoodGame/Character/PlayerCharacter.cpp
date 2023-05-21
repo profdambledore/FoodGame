@@ -35,12 +35,14 @@ APlayerCharacter::APlayerCharacter()
 	InteractablesRange = CreateDefaultSubobject<USphereComponent>(TEXT("Interactables Collision"));
 	InteractablesRange->SetSphereRadius(InteractRange - 50);
 	InteractablesRange->SetupAttachment(GetMesh(), "");
+	InteractablesRange->SetCollisionProfileName(FName("PlayerOverlap"));
 
 	ItemPosition = CreateDefaultSubobject<USceneComponent>(TEXT("Left Hand"));
 	ItemPosition->SetRelativeLocation(FVector(InteractRange, -40.0f, 20.0f));
 
 	PlacingMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Placing Mesh"));
 	PlacingMesh->SetVisibility(false, false);
+	PlacingMesh->SetCollisionProfileName(FName("NoCollision"));
 
 	// Get material object and store it
 	ConstructorHelpers::FObjectFinder<UMaterial>MaterialObject(TEXT("/Game/Data/M_PlacerMaterial"));
