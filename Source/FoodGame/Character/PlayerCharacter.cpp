@@ -376,7 +376,7 @@ void APlayerCharacter::PlaceItem()
 			}
 			case HitPlate:
 			{
-				// If it hits a plate, place it on the plate and attach it to that plate
+				// If it hits a plate place it on the plate and attach it to that plate
 				// Cast to the hit plate
 				APlate* HitPlate = Cast<APlate>(TraceHit.Actor);
 
