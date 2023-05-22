@@ -22,6 +22,7 @@ APlayerCharacter::APlayerCharacter()
 	// Cameras
 	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Camera"));
 	FirstPersonCamera->SetRelativeLocation(FVector(10.0f, 0.0f, 90.0f));
+	FirstPersonCamera->bUsePawnControlRotation = true;
 
 	PlayerCameraSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Third Person Spring Arm"));
 	PlayerCameraSpringArm->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
