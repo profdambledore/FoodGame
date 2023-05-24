@@ -4,6 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+
+#include "MainMenu/MainMenuDataLibrary.h"
+#include "Blueprint/UserWidget.h"
+
 #include "MainMenuCharacter.generated.h"
 
 class AMainMenuSelection;
@@ -23,6 +27,12 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION(BlueprintCallable)
+		void ChangeRestaurantCamera(TEnumAsByte<ERestaurantType> NewSelection);
+
+	UFUNCTION(BlueprintCallable)
+		void ChangeSectionCamera();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -30,12 +40,20 @@ protected:
 public:	
 	// Components
 
+	// UI
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "User Interface")
+		class UMainMenuWidget* MainMenuUI = nullptr;
+
+	// References
+	APlayerController* PC;
 
 	// Selections
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TMap<int, class AMainMenuSelection*> SelectionMap;
+		TMap<TEnumAsByte<ERestaurantType>, class AMainMenuSelection*> SelectionMap;
 
 	// Current Selections
-	int CurrentRestraunt = 0;
-	int CurrentFoodType = 0;
+	TEnumAsByte<ERestaurantType> RestaurantSelected;
+	TEnumAsByte<EFoodType> FoodSelected;
+
+	TEnumAsByte<ECameraType> CurrentCamera;
 };

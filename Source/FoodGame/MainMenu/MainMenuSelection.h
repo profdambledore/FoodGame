@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+
+#include "MainMenu/MainMenuDataLibrary.h"
+
 #include "MainMenuSelection.generated.h"
 
 UCLASS()
@@ -19,7 +22,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-		void SwapToRestarauntCamera();
+		void SwapToRestaurantCamera();
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 		void SwapToFoodCamera();
@@ -35,6 +38,8 @@ public:
 		USceneComponent* Root;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int SelectionIdentifier;
+		TEnumAsByte<ERestaurantType> SelectionIdentifier;
+
+
 
 };
