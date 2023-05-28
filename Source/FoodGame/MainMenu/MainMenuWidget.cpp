@@ -21,6 +21,7 @@ void UMainMenuWidget::SynchronizeProperties()
 
 void UMainMenuWidget::ShowExitQuestion()
 {
+	ExitQuestion->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UMainMenuWidget::HideExitQuestion()

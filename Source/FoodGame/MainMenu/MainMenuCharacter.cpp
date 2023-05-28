@@ -8,7 +8,7 @@
 AMainMenuCharacter::AMainMenuCharacter()
 {
 	// Find UI object and store it
-	static ConstructorHelpers::FClassFinder<UUserWidget>UIClass(TEXT("/Game/MainMenu/WBP_MainMenuUI"));
+	static ConstructorHelpers::FClassFinder<UUserWidget>UIClass(TEXT("/Game/MainMenu/WBP_MainMenu"));
 	if (UIClass.Succeeded()) {
 		MainMenuUI = CreateWidget<UMainMenuWidget>(GetWorld(), UIClass.Class);
 	};
@@ -24,10 +24,13 @@ void AMainMenuCharacter::BeginPlay()
 
 	// Complete the reference to the player controller and show the mouse cursor
 	PC = Cast<APlayerController>(GetController());
-	PC->bShowMouseCursor = true;
 
 	// Add the widget to the players viewport
-	MainMenuUI->AddToViewport();
+	if (PC != nullptr) {
+		PC->bShowMouseCursor = true;
+		MainMenuUI->AddToViewport();
+	}
+
 	//MainMenuUI->EditorPlayer = this;
 
 	

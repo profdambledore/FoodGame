@@ -5,10 +5,16 @@
 
 void UExitQuestion::NativeConstruct()
 {
-	// Add OnReleased binding to button
-	//if (Button) {
-		//Button->OnReleased.AddDynamic(this, &UPauseSelectionWidget::ButtonOnReleased);
-	//}
+	// Add OnReleased binding to the cancel button and the blur
+	if (CancelButton) {
+		CancelButton->OnReleased.AddDynamic(this, &UExitQuestion::CancelButtonReleased);
+		Blur->OnReleased.AddDynamic(this, &UExitQuestion::CancelButtonReleased);
+	}
+
+	// Add OnReleased binding to the exit button
+	if (ExitButton) {
+		ExitButton->OnReleased.AddDynamic(this, &UExitQuestion::ExitButtonReleased);
+	}
 }
 
 void UExitQuestion::CancelButtonReleased()
