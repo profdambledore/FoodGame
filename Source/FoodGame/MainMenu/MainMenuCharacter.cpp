@@ -8,7 +8,7 @@
 AMainMenuCharacter::AMainMenuCharacter()
 {
 	// Find UI object and store it
-	static ConstructorHelpers::FClassFinder<UUserWidget>UIClass(TEXT(""));
+	static ConstructorHelpers::FClassFinder<UUserWidget>UIClass(TEXT("/Game/MainMenu/WBP_MainMenuUI"));
 	if (UIClass.Succeeded()) {
 		MainMenuUI = CreateWidget<UMainMenuWidget>(GetWorld(), UIClass.Class);
 	};
