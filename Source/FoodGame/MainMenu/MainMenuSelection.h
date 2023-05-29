@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 
 #include "MainMenu/MainMenuDataLibrary.h"
+#include "Camera/CameraComponent.h"
 
 #include "MainMenuSelection.generated.h"
 
@@ -22,10 +23,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-		void SwapToRestaurantCamera();
+		AActor* SwapToRestaurantCamera();
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-		void SwapToFoodCamera();
+		AActor* SwapToFoodCamera();
 
 
 protected:
@@ -36,6 +37,9 @@ public:
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		USceneComponent* Root;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+		UCameraComponent* RestaurantCamera;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TEnumAsByte<ERestaurantType> SelectionIdentifier;

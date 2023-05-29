@@ -30,4 +30,6 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 		class UExitQuestion* ExitQuestion = nullptr;
+
+	class AMainMenuCharacter* Owner = nullptr;
 };

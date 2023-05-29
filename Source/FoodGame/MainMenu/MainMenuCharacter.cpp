@@ -29,11 +29,14 @@ void AMainMenuCharacter::BeginPlay()
 	if (PC != nullptr) {
 		PC->bShowMouseCursor = true;
 		MainMenuUI->AddToViewport();
+		MainMenuUI->Owner = this;
 	}
 
-	//MainMenuUI->EditorPlayer = this;
-
-	
+	// Move the camera to the first selection if one is found
+	if (SelectionMap.Num() >= 1) {
+		TArray<TEnumAsByte<ERestaurantType>> Keys; SelectionMap.GenerateKeyArray(Keys);
+		ChangeRestaurantCamera(Keys[0]);
+	}
 }
 
 // Called every frame
@@ -52,9 +55,19 @@ void AMainMenuCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 void AMainMenuCharacter::ChangeRestaurantCamera(TEnumAsByte<ERestaurantType> NewSelection)
 {
+	// Set the new active section to the input
+	RestaurantSelected = NewSelection;
+
+	// Get the camera from the selection and then call ChangeCurrentCamera
+	ChangeCurrentCamera(SelectionMap.FindRef(RestaurantSelected)->SwapToRestaurantCamera());
 }
 
 void AMainMenuCharacter::ChangeSectionCamera()
 {
+}
+
+void AMainMenuCharacter::ChangeCurrentCamera(AActor* NewSelection)
+{
+	PC->SetViewTargetWithBlend(NewSelection, 1.5f, EViewTargetBlendFunction::VTBlend_EaseInOut, 1.0f, false);
 }
 

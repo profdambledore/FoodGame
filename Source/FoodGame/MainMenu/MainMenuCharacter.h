@@ -7,6 +7,7 @@
 
 #include "MainMenu/MainMenuDataLibrary.h"
 #include "Blueprint/UserWidget.h"
+#include "Camera/CameraComponent.h"
 
 #include "MainMenuCharacter.generated.h"
 
@@ -33,6 +34,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void ChangeSectionCamera();
 
+	UFUNCTION()
+		void ChangeCurrentCamera(AActor* NewSelection);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -43,6 +47,8 @@ public:
 	// UI
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "User Interface")
 		class UMainMenuWidget* MainMenuUI = nullptr;
+
+	float BlendTime = 1.5f;
 
 	// References
 	APlayerController* PC;
