@@ -41,9 +41,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 		UCameraComponent* RestaurantCamera;
 
+	// Identifier
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TEnumAsByte<ERestaurantType> SelectionIdentifier;
 
-
+	// Food Meshes
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TMap<TEnumAsByte<EFoodType>, UStaticMesh*> FoodMeshMap;
 
 };

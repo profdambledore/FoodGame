@@ -13,22 +13,35 @@ class FOODGAME_API UMainMenuDataLibrary : public UBlueprintFunctionLibrary
 	
 };
 
-UENUM()
+// The state the main menu is in
+UENUM(BlueprintType)
+enum EMainMenuState
+{
+	Options UMETA(Display Name = "Options"),
+	LevelSelect UMETA(Display Name = "Level Select"),
+	Settings UMETA(Display Name = "Settings"),
+	Credits UMETA(Display Name = "Credits"),
+};
+
+// The camera that should be active when in the Level Select option
+UENUM(BlueprintType)
 enum ECameraType
 {
 	Restaurant UMETA(Display Name = "Restaurant"),
 	Food UMETA(Display Name = "Food"),
 };
 
-UENUM()
+// The restaurant selection that should be focused
+UENUM(BlueprintType)
 enum ERestaurantType
 {
-	Chain UMETA(Display Name = "Chain"),
-	TownCenter UMETA(Display Name = "Town Center"),
+	DriveThru UMETA(Display Name = "Drive Thru"),
+	//TownCenter UMETA(Display Name = "Town Center"),
 	Tutorial UMETA(Display Name = "Tutorial"),
 };
 
-UENUM()
+// The food type that should be displayed by the selection and used when a level is selected
+UENUM(BlueprintType)
 enum EFoodType
 {
 	Burger UMETA(Display Name = "Burger"),

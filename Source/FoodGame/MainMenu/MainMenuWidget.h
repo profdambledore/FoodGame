@@ -24,6 +24,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void HideExitQuestion();
 
+	UFUNCTION(BlueprintImplementableEvent)
+		void ToogleBackButton(bool bShow);
+
+	UFUNCTION(BlueprintImplementableEvent)
+		void SetupLevelSelect();
+
 public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 		class UWidgetSwitcher* MainMenuSwitcher = nullptr;
@@ -31,5 +37,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 		class UExitQuestion* ExitQuestion = nullptr;
 
-	class AMainMenuCharacter* Owner = nullptr;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		class AMainMenuCharacter* Owner = nullptr;
 };

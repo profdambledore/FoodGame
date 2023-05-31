@@ -30,12 +30,15 @@ void AMainMenuCharacter::BeginPlay()
 		PC->bShowMouseCursor = true;
 		MainMenuUI->AddToViewport();
 		MainMenuUI->Owner = this;
+
+		// Also setup the level select
+		MainMenuUI->SetupLevelSelect();
 	}
 
-	// Move the camera to the first selection if one is found
-	if (SelectionMap.Num() >= 1) {
-		TArray<TEnumAsByte<ERestaurantType>> Keys; SelectionMap.GenerateKeyArray(Keys);
-		ChangeRestaurantCamera(Keys[0]);
+	// Focus the 'Options' main menu focusable if one is found and hide the back button
+	if (MainMenuFocusables.Contains(EMainMenuState::Options)) {
+		PC->SetViewTarget(MainMenuFocusables.FindRef(EMainMenuState::Options));
+		MainMenuUI->ToogleBackButton(false);
 	}
 }
 
@@ -53,20 +56,51 @@ void AMainMenuCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 }
 
-void AMainMenuCharacter::ChangeRestaurantCamera(TEnumAsByte<ERestaurantType> NewSelection)
+void AMainMenuCharacter::SetOptionsFocused()
+{
+	// Focus the 'Options' main menu focusable if one is found
+	PC->SetViewTargetWithBlend(MainMenuFocusables.FindRef(EMainMenuState::Options), 1.5f, EViewTargetBlendFunction::VTBlend_EaseInOut, 1.0f, false);
+
+	// Set the index of the switcher to the Options widget
+	MainMenuUI->MainMenuSwitcher->SetActiveWidgetIndex(0);
+	MainMenuUI->ToogleBackButton(false);
+}
+
+void AMainMenuCharacter::SetLevelSelectFocused()
+{
+	// Focus the current last selected restaurant
+	SetCurrentCamera(SelectionMap.FindRef(RestaurantSelected)->SwapToRestaurantCamera());
+
+	// Set the index of the switcher to the Level Select widget
+	MainMenuUI->MainMenuSwitcher->SetActiveWidgetIndex(1);
+	MainMenuUI->ToogleBackButton(true);
+}
+
+void AMainMenuCharacter::SetCreditsFocused()
+{
+	// Focus the 'Options' main menu focusable if one is found
+	PC->SetViewTargetWithBlend(MainMenuFocusables.FindRef(EMainMenuState::Credits), 1.5f, EViewTargetBlendFunction::VTBlend_EaseInOut, 1.0f, false);
+
+	// Set the index of the switcher to the Level Select widget, and show the back button
+	MainMenuUI->MainMenuSwitcher->SetActiveWidgetIndex(3);
+	MainMenuUI->ToogleBackButton(true);
+}
+
+// Level Select Functions
+void AMainMenuCharacter::SetRestaurantCamera(TEnumAsByte<ERestaurantType> NewSelection)
 {
 	// Set the new active section to the input
 	RestaurantSelected = NewSelection;
 
 	// Get the camera from the selection and then call ChangeCurrentCamera
-	ChangeCurrentCamera(SelectionMap.FindRef(RestaurantSelected)->SwapToRestaurantCamera());
+	SetCurrentCamera(SelectionMap.FindRef(RestaurantSelected)->SwapToRestaurantCamera());
 }
 
-void AMainMenuCharacter::ChangeSectionCamera()
+void AMainMenuCharacter::SetSectionCamera()
 {
 }
 
-void AMainMenuCharacter::ChangeCurrentCamera(AActor* NewSelection)
+void AMainMenuCharacter::SetCurrentCamera(AActor* NewSelection)
 {
 	PC->SetViewTargetWithBlend(NewSelection, 1.5f, EViewTargetBlendFunction::VTBlend_EaseInOut, 1.0f, false);
 }

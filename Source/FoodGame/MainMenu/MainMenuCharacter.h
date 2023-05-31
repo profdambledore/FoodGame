@@ -28,22 +28,31 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// Options Functions
 	UFUNCTION(BlueprintCallable)
-		void ChangeRestaurantCamera(TEnumAsByte<ERestaurantType> NewSelection);
+		void SetOptionsFocused();
 
 	UFUNCTION(BlueprintCallable)
-		void ChangeSectionCamera();
+		void SetLevelSelectFocused();
+
+	UFUNCTION(BlueprintCallable)
+		void SetCreditsFocused();
+
+	// Level Select Functions
+	UFUNCTION(BlueprintCallable)
+		void SetRestaurantCamera(TEnumAsByte<ERestaurantType> NewSelection);
+
+	UFUNCTION(BlueprintCallable)
+		void SetSectionCamera();
 
 	UFUNCTION()
-		void ChangeCurrentCamera(AActor* NewSelection);
+		void SetCurrentCamera(AActor* NewSelection);
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
-	// Components
-
 	// UI
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "User Interface")
 		class UMainMenuWidget* MainMenuUI = nullptr;
@@ -53,11 +62,21 @@ public:
 	// References
 	APlayerController* PC;
 
-	// Selections
+	// Options Properties
+	// The state of the main menu, what object should be focused
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TEnumAsByte<EMainMenuState> MainMenuState;
+
+	// Actors focusable in the main menu (no need to add a level select focusable)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TMap<TEnumAsByte<EMainMenuState>, AActor*> MainMenuFocusables;
+
+	// Level Select Properties
+	// TMap of all level selections available in the main menu
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		TMap<TEnumAsByte<ERestaurantType>, class AMainMenuSelection*> SelectionMap;
 
-	// Current Selections
+	// Current Level Selections
 	TEnumAsByte<ERestaurantType> RestaurantSelected;
 	TEnumAsByte<EFoodType> FoodSelected;
 
