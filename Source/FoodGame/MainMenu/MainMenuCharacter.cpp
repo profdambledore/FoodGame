@@ -91,13 +91,23 @@ void AMainMenuCharacter::SetRestaurantCamera(TEnumAsByte<ERestaurantType> NewSel
 {
 	// Set the new active section to the input
 	RestaurantSelected = NewSelection;
+	CurrentCamera = ECameraType::Restaurant;
 
 	// Get the camera from the selection and then call ChangeCurrentCamera
-	SetCurrentCamera(SelectionMap.FindRef(RestaurantSelected)->SwapToRestaurantCamera());
+	SelectionMap.FindRef(RestaurantSelected)->SwapToRestaurantCamera();
+	SetCurrentCamera(SelectionMap.FindRef(RestaurantSelected));
 }
 
-void AMainMenuCharacter::SetSectionCamera()
+void AMainMenuCharacter::SetFoodCamera(TEnumAsByte<EFoodType> NewFood)
 {
+	// Set the new food selection to the input
+	FoodSelected = NewFood;
+	CurrentCamera = ECameraType::Food;
+
+	// Update the active camera on the current selection and then call SetCurrentCamera
+	SelectionMap.FindRef(RestaurantSelected)->SwapToFoodCamera();
+	SelectionMap.FindRef(RestaurantSelected)->SetNewFoodSelection(NewFood);
+	SetCurrentCamera(SelectionMap.FindRef(RestaurantSelected));
 }
 
 void AMainMenuCharacter::SetCurrentCamera(AActor* NewSelection)

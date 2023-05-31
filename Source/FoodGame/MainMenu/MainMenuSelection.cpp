@@ -11,8 +11,18 @@ AMainMenuSelection::AMainMenuSelection()
 
 	RestaurantCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Restaurant Camera"));
 
+	FoodMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Food Mesh"));
+
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+}
+
+void AMainMenuSelection::SetNewFoodSelection(TEnumAsByte<EFoodType> NewFood)
+{
+	// Get the food mesh from the map
+	if (FoodMeshMap.Contains(NewFood)) {
+		FoodMesh->SetStaticMesh(FoodMeshMap.FindRef(NewFood));
+	}
 }
 
 // Called when the game starts or when spawned

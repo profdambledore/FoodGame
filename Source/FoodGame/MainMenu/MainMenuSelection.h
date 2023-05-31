@@ -7,6 +7,7 @@
 
 #include "MainMenu/MainMenuDataLibrary.h"
 #include "Camera/CameraComponent.h"
+#include "Components/StaticMeshComponent.h"
 
 #include "MainMenuSelection.generated.h"
 
@@ -28,6 +29,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 		AActor* SwapToFoodCamera();
 
+	UFUNCTION(BlueprintCallable)
+		void SetNewFoodSelection(TEnumAsByte<EFoodType> NewFood);
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -40,6 +44,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
 		UCameraComponent* RestaurantCamera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+		UStaticMeshComponent* FoodMesh;
 
 	// Identifier
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

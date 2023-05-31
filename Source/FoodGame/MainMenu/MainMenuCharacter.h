@@ -43,7 +43,7 @@ public:
 		void SetRestaurantCamera(TEnumAsByte<ERestaurantType> NewSelection);
 
 	UFUNCTION(BlueprintCallable)
-		void SetSectionCamera();
+		void SetFoodCamera(TEnumAsByte<EFoodType> NewFood);
 
 	UFUNCTION()
 		void SetCurrentCamera(AActor* NewSelection);
