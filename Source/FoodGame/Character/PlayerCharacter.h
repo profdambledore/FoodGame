@@ -26,6 +26,7 @@ class AParentStation;
 class APlate;
 class AParentContainer;
 class AParentSink;
+class AOrderManager;
 
 UCLASS()
 class FOODGAME_API APlayerCharacter : public ACharacter
@@ -81,6 +82,9 @@ protected:
 	// Called to place an item from the player's 'inventory' in the world
 	void PlaceItem();
 
+	UFUNCTION(BlueprintImplementableEvent)
+		void ToggleItemShown();
+
 	// Trace Functions
 	// Trace function for items
 	void TraceForItems();
@@ -121,6 +125,10 @@ protected:
 	// Pointer to Hologram Material
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data Table")
 		UMaterial* PlacerMaterial = nullptr;
+
+	// UI
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "User Interface")
+		class UPlayerHUD* PlayerUI = nullptr;
 
 	// Interact Properties
 	// How far the player can interact in UnrealUnits

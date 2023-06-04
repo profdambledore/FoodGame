@@ -3,6 +3,8 @@
 #include "Items/Plate.h"
 #include "Items/ParentContainer.h"
 #include "Equipment/ParentSink.h"
+#include "Character/PlayerHUD.h"
+#include "Character/OrderManager.h"
 #include "Character/PlayerCharacter.h"
 
 // Sets default values
@@ -49,6 +51,13 @@ APlayerCharacter::APlayerCharacter()
 	ConstructorHelpers::FObjectFinder<UMaterial>MaterialObject(TEXT("/Game/Data/M_PlacerMaterial"));
 	if (MaterialObject.Succeeded()) { PlacerMaterial = MaterialObject.Object; }
 
+	// UI
+	// Find UI object and store it
+	static ConstructorHelpers::FClassFinder<UUserWidget>UIClass(TEXT("/Game/Character/WBP_PlayerHUD"));
+	if (UIClass.Succeeded()) {
+		PlayerUI = CreateWidget<UPlayerHUD>(GetWorld(), UIClass.Class);
+	};
+
 	// Set the active camera
 	ThirdPersonCamera->SetActive(false, false);
 	FirstPersonCamera->SetActive(true, true);
@@ -62,6 +71,14 @@ void APlayerCharacter::BeginPlay()
 	// Add Overlap Events
 	InteractablesRange->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnIRBeginOverlap);
 	InteractablesRange->OnComponentEndOverlap.AddDynamic(this, &APlayerCharacter::OnIREndOverlap);
+
+	// Get reference to the players controller
+	PC = Cast<APlayerController>(GetController());
+
+	if (PlayerUI) {
+		PlayerUI->AddToViewport();
+		PlayerUI->Owner = this;
+	}
 }
 
 // Called every frame
@@ -319,6 +336,7 @@ void APlayerCharacter::CollectItem(AParentItem* NewItem)
 	NewItem->ToggleItemCollision(false);
 	NewItem->AttachToComponent(ItemPosition, FAttachmentTransformRules::SnapToTargetIncludingScale);
 	HeldItem = NewItem;
+	ToggleItemShown();
 }
 
 void APlayerCharacter::PlaceItem()
@@ -354,6 +372,7 @@ void APlayerCharacter::PlaceItem()
 						HeldItem->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
 						HeldItem->AttachedTo = HitItem;
 						HeldItem = nullptr;
+						ToggleItemShown();
 					}
 				}
 
@@ -367,6 +386,7 @@ void APlayerCharacter::PlaceItem()
 					HeldItem->AttachToActor(HitItem, FAttachmentTransformRules::KeepWorldTransform);
 					HeldItem->AttachedTo = HitItem;
 					HeldItem = nullptr;
+					ToggleItemShown();
 				}
 
 				// Else, place it at the hit location
@@ -390,6 +410,7 @@ void APlayerCharacter::PlaceItem()
 				HeldItem->AttachToActor(HitPlate, FAttachmentTransformRules::KeepWorldTransform);
 				HeldItem->AttachedTo = HitPlate;
 				HeldItem = nullptr;
+				ToggleItemShown();
 				break;
 			}
 			default:
@@ -472,6 +493,7 @@ void APlayerCharacter::PlaceAt(FVector Location)
 	HeldItem->SetActorLocation(Location);
 	HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
 	HeldItem = nullptr;
+	ToggleItemShown();
 }
 
 ETraceQuery APlayerCharacter::GetTraceHitClass(AActor* TraceOutput)
