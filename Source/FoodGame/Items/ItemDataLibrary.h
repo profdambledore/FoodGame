@@ -54,6 +54,24 @@ enum ETraceQuery
 	HitSink UMETA(Display Name = "Hit Sink"),
 };
 
+UENUM()
+enum EOrderableType
+{
+	OrderMain UMETA(Display Name = "Main"),
+	OrderAddOn UMETA(Display Name = "Add On"),
+	OrderSide UMETA(Display Name = "Side"),
+	OrderDrink UMETA(Display Name = "Drink"),
+};
+
+UENUM()
+enum EOrderableRule
+{
+	MustBeFirst UMETA(Display Name = "Must Be First"),
+	MustBeLast UMETA(Display Name = "Must Be Last"),
+	CantBeBounds UMETA(Display Name = "Can't Be Bounds"),
+	AnyOrder UMETA(Display Name = "Any Order"),
+};
+
 
 USTRUCT(BlueprintType)
 struct FItemData : public FTableRowBase
@@ -148,4 +166,63 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FString OutputItems;
+};
+
+// Ordering Structs
+USTRUCT(BlueprintType)
+struct FStackItem : public FTableRowBase
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		FString ItemID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TEnumAsByte<EOrderableRule> Rules;
+};
+
+USTRUCT(BlueprintType)
+struct FStackAsID
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TArray<FString> ItemID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		bool bChecked = false;
+};
+
+USTRUCT(BlueprintType)
+struct FOrderable : public FTableRowBase
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		FString ID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TArray<FStackItem> Items;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TEnumAsByte<EOrderableType> Type;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		UTexture2D* Icon;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		float Price;
+};
+
+USTRUCT(BlueprintType)
+struct FOrder
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TArray<FOrderable> ItemsInOrder;
 };

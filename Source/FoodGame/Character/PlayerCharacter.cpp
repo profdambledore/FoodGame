@@ -440,7 +440,7 @@ void APlayerCharacter::TraceForItems()
 	TraceParams.bReturnPhysicalMaterial = true;
 
 	bTrace = GetWorld()->LineTraceSingleByChannel(TraceHit, TraceStart, TraceEnd, TraceChannel, TraceParams);
-	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
+	//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 5.f, ECC_GameTraceChannel1, 1.f);
 
 	// If the trace hits something...
 	if (bTrace) {

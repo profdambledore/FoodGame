@@ -35,6 +35,9 @@ public:
 public:
 	// Components
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+		class UImage* AimPosition = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 		class UImage* HeldItemImage = nullptr;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
