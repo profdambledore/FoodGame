@@ -211,7 +211,10 @@ public:
 		float LengthPoints = 0.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		float AccuracyPoints = 0.0f;
+		int AccuracyPoints = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		int PresentationPoints = 0;
 
 	FStackAccuracy() {};
 
@@ -239,7 +242,7 @@ public:
 		UTexture2D* Icon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		float Price;
+		bool bComplete;
 };
 
 USTRUCT(BlueprintType)
@@ -250,4 +253,47 @@ struct FOrder
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TArray<FOrderable> ItemsInOrder;
+};
+
+// Reward Structs
+USTRUCT(BlueprintType)
+struct FRewardData
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		int Presentation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		int Accuracy;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		int Speed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TArray<FString> MissingItems;
+
+	FRewardData() {};
+
+	FRewardData(int NewPres, int NewAcc, int NewSpe, TArray<FString> NewMissItem) {
+		Presentation = NewPres;
+		Accuracy = NewAcc;
+		Speed = NewSpe;
+		MissingItems = NewMissItem;
+	};
+
+};
+
+USTRUCT(BlueprintType)
+struct FOrderReward
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TArray<FRewardData> ItemRewardData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		TArray<FString> AdditionalItems;
 };

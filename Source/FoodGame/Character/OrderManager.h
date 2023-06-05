@@ -25,6 +25,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void CompareOrder(TArray<FStackAsID> InStacks);
 
+	UFUNCTION(BlueprintCallable)
+		void CompleteOrder();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -47,7 +50,26 @@ public:
 
 	// Order
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FOrder CurrentOrder;
+		TArray<FOrder> CurrentOrders;
+
+	int OrderIndex;
+
+	// Rewards
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TMap<int, FOrderReward> Rewards;
+
+	//TEEST
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FStackAsID> InputStacks;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FStackAsID> RequestStacks;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TArray<FStackAccuracy> StackPoints;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		FOrderReward foundReward;
 
 	float LengthThreshold = 0.7f;
 	float AccuracyThreshold = 1.0f;

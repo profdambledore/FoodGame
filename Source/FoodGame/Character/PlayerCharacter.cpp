@@ -195,7 +195,22 @@ void APlayerCharacter::OnIREndOverlap(UPrimitiveComponent* OverlappedComp, AActo
 
 void APlayerCharacter::Interact()
 {
+	// TEST FUNCTION -- REMOVE LATER
+	TArray<FStackAsID> sAID;
 
+	if (HeldItem) {
+		TArray<AParentItem*> toArray = HeldItem->StackedItems.Array();
+		for (int i = 0; i < HeldItem->StackedItems.Array().Num(); i++) {
+			TArray<FString> StackedIDs;
+			StackedIDs.Add(toArray[i]->Data.ID);
+			TArray<AParentItem*> toArraytwo = toArray[i]->StackedItems.Array();
+			for (int j = 0; j < toArraytwo.Num(); j++) {
+				StackedIDs.Add(toArraytwo[j]->Data.ID);
+			}
+			sAID.Add(FStackAsID{ StackedIDs });
+		}
+		OM->CompareOrder(sAID);
+	}
 }
 
 // --- Actions ---
