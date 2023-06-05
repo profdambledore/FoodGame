@@ -6,7 +6,7 @@
  
  ## Project Document
  
- [Link]()
+ [Link](https://github.com/profdambledore/FoodGame/blob/main/Docs/Development%2C%20Design%20and%20Usage.pdf)
 
 ## Assets Used:
 - Polygon Shops by SyntyStudios 
