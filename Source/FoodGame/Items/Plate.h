@@ -19,7 +19,7 @@ public:
 	//bool bDirty = false;
 
 	// Array of all items attached to the plate
-	TArray<AParentItem*> AttachedItems;
+	//TArray<AParentItem*> AttachedItems;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TEnumAsByte<EConditionState> Condition;

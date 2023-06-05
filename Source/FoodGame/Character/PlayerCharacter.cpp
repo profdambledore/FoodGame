@@ -75,9 +75,17 @@ void APlayerCharacter::BeginPlay()
 	// Get reference to the players controller
 	PC = Cast<APlayerController>(GetController());
 
+	// Add the UI to the player's viewport
 	if (PlayerUI) {
 		PlayerUI->AddToViewport();
 		PlayerUI->Owner = this;
+	}
+
+	// Find the order manager in the world and set the reference
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AOrderManager::StaticClass(), FoundActors);
+	if (FoundActors.Num() > 0) {
+		OM = Cast<AOrderManager>(FoundActors[0]);
 	}
 }
 
@@ -321,7 +329,7 @@ void APlayerCharacter::CollectItem(AParentItem* NewItem)
 		// Check if the attached item is a plate. If it is, 'unattach' it in the plate's slot
 		if (TraceHit.Actor->IsA(APlate::StaticClass())) {
 			class APlate* attachedTo = Cast<APlate>(NewItem->AttachedTo);
-			attachedTo->AttachedItems.Remove(NewItem);
+			attachedTo->StackedItems.Remove(NewItem);
 			NewItem->AttachedTo = nullptr;
 		}
 		// Else, it must be in a stack.
@@ -406,7 +414,7 @@ void APlayerCharacter::PlaceItem()
 				HeldItem->SetActorRotation(GetActorRotation() + FRotator(0.0f, 90.0f, 0.0f));
 
 				// Attach to the plate
-				HitPlate->AttachedItems.Add(HeldItem);
+				HitPlate->StackedItems.Add(HeldItem);
 				HeldItem->AttachToActor(HitPlate, FAttachmentTransformRules::KeepWorldTransform);
 				HeldItem->AttachedTo = HitPlate;
 				HeldItem = nullptr;

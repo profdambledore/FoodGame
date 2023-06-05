@@ -191,8 +191,33 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TArray<FString> ItemID;
 
+	FStackAsID() {};
+
+	FStackAsID(TArray<FString> NewIDs) {
+		ItemID = NewIDs;
+	};
+};
+
+USTRUCT(BlueprintType)
+struct FStackAccuracy
+{
+	GENERATED_USTRUCT_BODY();
+
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		bool bChecked = false;
+		int Index = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		float LengthPoints = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		float AccuracyPoints = 0.0f;
+
+	FStackAccuracy() {};
+
+	FStackAccuracy(int NewIndex) {
+		Index = NewIndex;
+	};
 };
 
 USTRUCT(BlueprintType)

@@ -7,7 +7,7 @@
 AOrderManager::AOrderManager()
 {
 	// Get Data Table object and store it
-	ConstructorHelpers::FObjectFinder<UDataTable>OrderablesDTObject(TEXT(""));
+	ConstructorHelpers::FObjectFinder<UDataTable>OrderablesDTObject(TEXT("/Game/Data/DT_Orderables"));
 	if (OrderablesDTObject.Succeeded()) { OrderablesDataTable = OrderablesDTObject.Object; }
 
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -28,73 +28,77 @@ void AOrderManager::Tick(float DeltaTime)
 
 }
 
-bool AOrderManager::CompareOrder(TArray<FStackAsID> InStacks)
+void AOrderManager::CompareOrder(TArray<FStackAsID> InStacks)
 {
-	// For each item in the order, check it against the input
-	// First, find the matching stack by comparing the items against each other
-	bool bOrderComplete = true;
-	TArray<FStackAsID> StacksToCompare;
+	// Get a copy of the input and requested arrays so we can remove indexes from it
+	TArray<FStackAsID> InputStacks = InStacks;
+	TArray<FStackAsID> RequestStacks;
 
-	for (int i = 0; i > CurrentOrder.ItemsInOrder.Num(); i++) {
-		if (bOrderComplete) {
-			// Comparison variables
-			bool bC = true;
-			StacksToCompare = InStacks;
-			int k = 0;
+	// Convert the current order from FOrderable to FStackAsID
+	for (int i = 0; i < CurrentOrder.ItemsInOrder.Num(); i++) {
+		TArray<FString> sID;
+		for (int j = 0; j < CurrentOrder.ItemsInOrder[i].Items.Num(); j++) {
+			sID.Add(CurrentOrder.ItemsInOrder[i].Items[j].ItemID);
+		}
+		RequestStacks.Add(FStackAsID(sID));
+	}
 
-			// Compare against the first item initially, this should reduce the amount of comparisons significantly
-			for (int j = 0; j > StacksToCompare.Num(); j++) {
-				if (!StacksToCompare[j].ItemID.Contains(CurrentOrder.ItemsInOrder[i].Items[k].ItemID) || !StacksToCompare[j].bChecked) {
-						StacksToCompare.RemoveAt(j);
-				}
-			}
+	// Before comparing, make an array the length of the input stacks
+	// Set all of their points to 0 to begin
+	TArray<FStackAccuracy> StackPoints;
+	for (int i = 0; i < InputStacks.Num(); i++) {
+		StackPoints.Add(FStackAccuracy(i));
+	}
 
-			// Check if there are more than two suitable stacks.  If there are, do nothing
-			if (StacksToCompare.Num() > 1) {
-				bC = false;
-			}
-
-			// If there are more than two stacks suitable, then check the second item.  If there are still more than two suitable, then check the third, so on an so forth
-			while (bC == true) {
-				k++;
-
-				// Check if k exceeds CurrentOrder.ItemsInOrder[i].Items.  If it does, then compare the lengths of the remaining items
-				if (k > CurrentOrder.ItemsInOrder[i].Items.Num()) {
-					for (int j = 0; j > StacksToCompare.Num(); j++) {
-						if (StacksToCompare[j].ItemID.Num() != CurrentOrder.ItemsInOrder[i].Items.Num()) {
-							StacksToCompare.RemoveAt(j);
-						}
-					}
-					// If there is still more than two, this must mean the order has duplicate items.  Take the first one in this case.
-					if (StacksToCompare.Num() < 1) {
-						FStackAsID hold = StacksToCompare[0];
-						StacksToCompare.Empty();  StacksToCompare.Add(hold);
-						bC = false;
-					}
-				}
-				// If k does not exceed, check the 'k' item
-				else {
-					for (int j = 0; j > StacksToCompare.Num(); j++) {
-						if (!StacksToCompare[j].ItemID.Contains(CurrentOrder.ItemsInOrder[i].Items[k].ItemID)) {
-							StacksToCompare.RemoveAt(j);
-						}
-					}
-				}
-				// Check if there are still more than one.  If so, continue while loop
-				if (StacksToCompare.Num() <= 1) {
-					bC = false;
-				}
-			}
-
-			// If StacksToCompare is 0, the order is missing this item.  If so, stop comparing
-			if (StacksToCompare.Num() == 0) {
-				bOrderComplete = false;
-				return false;
-			}
-
-			// If StacksToCompare is 1, compare the order of this item through the rules of the item
+	// Next, start comparing each item's length against the ones ordered
+	for (int i = 0; i < InputStacks.Num(); i++) {
+		StackPoints[i].LengthPoints = RequestStacks[0].ItemID.Num() / InputStacks[i].ItemID.Num();
+		// Inverse points if they exceed 1.0f
+		if (StackPoints[i].LengthPoints > 1.0f) {
+			StackPoints[i].LengthPoints = StackPoints[i].LengthPoints - (StackPoints[i].LengthPoints - 1.0f);
 		}
 	}
-	return true;
+
+	// Remove any indexes below the length threshold
+	for (int i = 0; i < InputStacks.Num(); i++) {
+		if (StackPoints[i].LengthPoints < LengthThreshold) {
+			StackPoints.RemoveAt(i);
+		}
+	}
+
+	// Check if there is no suitable index.  If so, this item requested is missing
+	if (StackPoints.Num() == 0) {
+		// Don't remove anything from the requested array
+	}
+	// Check if there are more than one suitable index.  If so, compute test two
+	else {
+		// Compare each input against the current requested by checking if input contains a requested item.  If it does, give it a point
+		for (int i = 0; i < StackPoints.Num(); i++) {
+			for (int j = 0; j < RequestStacks[0].ItemID.Num(); j++) {
+				if (RequestStacks[0].ItemID.Contains(InputStacks[StackPoints[i].Index].ItemID[j])) {
+					StackPoints[i].AccuracyPoints++;
+				}
+			}
+		}
+
+		// Remove any indexes outside the accuracy bounds
+		for (int i = 0; i < StackPoints.Num(); i++) {
+			if (StackPoints[i].AccuracyPoints > RequestStacks[0].ItemID.Num() + 1 || StackPoints[i].AccuracyPoints < RequestStacks[0].ItemID.Num() - 1) {
+				StackPoints.RemoveAt(i);
+			}
+		}
+
+		// If any remain now, then take the first index available.
+		if (StackPoints.Num() != 0) {
+			// Remove input and requested, reward player
+
+
+			// If RequestStacks is now empty, add time
+		}
+		else {
+			// Don't remove anything from the requested array, but remove the input
+
+		}
+	}
 }
 

@@ -15,6 +15,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Materials/Material.h"
 #include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
 
 #include "Items/ItemDataLibrary.h"
 
@@ -101,6 +102,9 @@ public:
 	// References
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		APlayerController* PC;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		AOrderManager* OM = nullptr;
 
 	// Components
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Components")

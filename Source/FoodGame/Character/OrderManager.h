@@ -23,7 +23,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-		bool CompareOrder(TArray<FStackAsID> InStacks);
+		void CompareOrder(TArray<FStackAsID> InStacks);
 
 protected:
 	// Called when the game starts or when spawned
@@ -48,5 +48,8 @@ public:
 	// Order
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FOrder CurrentOrder;
+
+	float LengthThreshold = 0.7f;
+	float AccuracyThreshold = 1.0f;
 
 };
