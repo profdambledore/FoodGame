@@ -1,4 +1,8 @@
 # Prototype: FoodGame
+
+  <p align="center">
+  <img src="https://github.com/profdambledore/FoodGame/blob/main/Docs/logo.PNG" />
+</p>
  
  Inspired by the fast-paced action of Crazy Taxi, the player is given their own fast food restaurant to pilot and maintain, while endless rounds of customers come and bombard them with orders.  Every time the player completes an order, they are rewarded with extra round time and money and compleing enough orders in a round freezes remaining seconds for use in the next. A simple control scheme keeps the game easy to learn, while the amount of different orders enhances replayability.
  
